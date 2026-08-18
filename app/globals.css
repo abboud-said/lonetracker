@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --background: #fbfaf9;
+  --surface: #ffffff;
+  --border: #e3e0dc;
+  --foreground: #1c1a18;
+  --muted: #6f6a64;
+  --accent: #1f6f5c;
+  --accent-soft: #e8f2ef;
+  --danger: #a8321c;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #121110;
+    --surface: #1b1a18;
+    --border: #302e2b;
+    --foreground: #eeebe7;
+    --muted: #9b958d;
+    --accent: #6cc2a8;
+    --accent-soft: #1d2b27;
+    --danger: #e0755c;
   }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Money and hour columns line up only if the digits are the same width. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+input,
+select {
+  color: inherit;
 }

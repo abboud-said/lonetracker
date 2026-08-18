@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lönetracker
 
-## Getting Started
+A web app for turning a work schedule into actual pay, including Swedish OB
+(*obekväm arbetstid*) supplements. Upload a schedule, get gross pay, tax and net
+pay — with every hour attributed to the rule that paid for it.
 
-First, run the development server:
+This is a generalized rebuild of an earlier version that hardcoded one store's
+OB windows. Here the rules are data you edit, so the app fits any schedule.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Why this exists
+
+Swedish retail and service schedules come with OB surcharges that depend on the
+day and the time of day. Working them out by hand for every shift, every pay
+period, gets old fast — and it is easy to be quietly underpaid without a way to
+check. This app does the arithmetic and shows its work.
+
+## What it does
+
+- Reads a schedule from `.csv` or `.xlsx` (columns `Datum`/`Date`,
+  `Start`, `Slut`/`End`, with an optional `Rast`/`Break`)
+- Splits every shift across configurable OB tiers by weekday and time of day
+- Handles shifts that run past midnight, applying the *next* day's rules to the
+  hours after 00:00
+- Spreads unpaid breaks proportionally across tiers, so a break never silently
+  eats the best-paid hours
+- Shows gross pay, tax at a configurable rate, and net pay, plus a per-shift
+  breakdown you can expand
+- Swedish and English, switchable
+- Installable as a PWA; everything is stored in the browser's local storage
+
+## OB rules are configurable
+
+The core idea. A rule set is a list of **tiers** (a name and a supplement
+percentage) and a list of **time windows** (weekdays, a start and end time, and
+the tier they pay). Any hour not covered by a window pays the base rate only.
+
+The bundled **Handels – detaljhandel** preset mirrors a typical retail schedule:
+
+| When | Pays |
+| --- | --- |
+| Mon–Fri 18:00–20:00 | OB 50% |
+| Mon–Fri 20:00–24:00 | OB 70% |
+| Sat 12:00–24:00 | OB 100% |
+| Sun 00:00–24:00 | OB 100% |
+
+It is a starting point, not legal advice — check it against your own
+kollektivavtal before trusting the numbers.
+
+Supplements are paid **on top of** the base rate: an hour at OB 50% with a base
+of 177.44 kr/h pays 177.44 + 88.72 kr.
+
+## Privacy
+
+There is no backend, no account, and no analytics. The schedule is parsed in the
+browser and the results never leave it.
+
+## Tech
+
+Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4. Every route is
+statically prerendered — the app is entirely client-side.
+
+The `.xlsx` reader is hand-rolled: it walks the zip's central directory and
+inflates the entries with the browser's built-in `DecompressionStream`, so the
+app ships no spreadsheet dependency. Persisted state is exposed to React through
+`useSyncExternalStore`, which also picks up changes from other open tabs.
+
+```
+lib/
+  rules.ts    tiers, windows, presets, validation
+  calc.ts     shift splitting and pay totals
+  parse.ts    csv + xlsx readers, schedule column detection
+  storage.ts  localStorage load/save
+  store.ts    useSyncExternalStore bindings
+  i18n.ts     sv/en strings
+  time.ts     time parsing and formatting
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Running it locally
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Then open http://localhost:3000.
