@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Lönetracker",
     short_name: "Lönetracker",
-    description: "Räkna ut lön med OB-tillägg från ditt schema.",
+    description: "Lön med OB-tillägg för dig som jobbar i butik och har timlön.",
     start_url: "/",
     display: "standalone",
     background_color: "#fbfaf9",

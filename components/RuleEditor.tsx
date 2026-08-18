@@ -6,7 +6,6 @@ import {
   ALL_DAY_KEYS,
   detaljhandelPreset,
   emptyRuleSet,
-  lagerPreset,
   newId,
   validateRuleSet,
 } from "@/lib/rules";
@@ -132,7 +131,6 @@ export function RuleEditor({
           <Button onClick={() => onChange(detaljhandelPreset())}>
             {t("presetDetaljhandel", lang)}
           </Button>
-          <Button onClick={() => onChange(lagerPreset())}>{t("presetLager", lang)}</Button>
           <Button variant="quiet" onClick={() => onChange(emptyRuleSet(ruleSet.name))}>
             {t("clearRules", lang)}
           </Button>

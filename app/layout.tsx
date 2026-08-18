@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Lönetracker — lön med OB-tillägg",
+  title: "Lönetracker — lön med OB för butiksanställda",
   description:
-    "Räkna ut lön med OB-tillägg från ditt schema. Allt sker lokalt i webbläsaren. Work out pay with Swedish OB supplements straight from your schedule.",
+    "För dig som jobbar i butik och har timlön: ladda upp schemat och se vad månaden faktiskt ger, med OB-tillägg enligt Detaljhandelsavtalet. Allt räknas ut lokalt i webbläsaren.",
   applicationName: "Lönetracker",
   appleWebApp: { capable: true, title: "Lönetracker", statusBarStyle: "default" },
 };

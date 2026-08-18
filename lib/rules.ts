@@ -53,42 +53,13 @@ export function detaljhandelPreset(): RuleSet {
   };
 }
 
-/**
- * Lager- och e-handelsavtalet, as published by Handels on its OB-tillägg page.
- *
- * Taken from the union's summary rather than the agreement text itself, so it
- * is worth checking against your own avtal before relying on it.
- */
-export function lagerPreset(): RuleSet {
-  return {
-    id: "handels-lager",
-    name: "Handels – Lager & e-handel",
-    tiers: [
-      { id: "ob40", label: "OB 40%", percent: 40 },
-      { id: "ob70", label: "OB 70%", percent: 70 },
-      { id: "ob100", label: "OB 100%", percent: 100 },
-    ],
-    windows: [
-      { id: "lg1", days: [1, 2, 3, 4, 5], from: 0, to: 6 * 60, tierId: "ob70" },
-      { id: "lg2", days: [1, 2, 3, 4, 5], from: 6 * 60, to: 7 * 60, tierId: "ob40" },
-      { id: "lg3", days: [1, 2, 3, 4, 5], from: 18 * 60, to: 23 * 60, tierId: "ob40" },
-      { id: "lg4", days: [1, 2, 3, 4, 5], from: 23 * 60, to: 24 * 60, tierId: "ob70" },
-      { id: "lg5", days: [6], from: 0, to: 6 * 60, tierId: "ob70" },
-      { id: "lg6", days: [6], from: 6 * 60, to: 23 * 60, tierId: "ob40" },
-      { id: "lg7", days: [6], from: 23 * 60, to: 24 * 60, tierId: "ob70" },
-      { id: "lg8", days: [0, "holiday"], from: 0, to: 24 * 60, tierId: "ob100" },
-    ],
-  };
-}
-
 /** An empty rule set — every hour pays base only until the user adds windows. */
 export function emptyRuleSet(name: string): RuleSet {
   return { id: newId(), name, tiers: [], windows: [] };
 }
 
-export const PRESETS: { key: "detaljhandel" | "lager"; build: () => RuleSet }[] = [
+export const PRESETS: { key: "detaljhandel"; build: () => RuleSet }[] = [
   { key: "detaljhandel", build: detaljhandelPreset },
-  { key: "lager", build: lagerPreset },
 ];
 
 export type Segment = { from: number; to: number; tierId: string | null };

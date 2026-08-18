@@ -1,45 +1,37 @@
 # Lönetracker
 
-A web app for turning a work schedule into actual pay, including Swedish OB
-(*obekväm arbetstid*) supplements. Upload a schedule, get gross pay, tax and net
-pay — with every hour attributed to the rule that paid for it.
+A web app for hourly-paid retail workers in Sweden. Upload your schedule, get
+what the month actually pays — OB (*obekväm arbetstid*) supplements, tax and net
+pay, with every hour attributed to the rule that paid for it.
 
-This is a generalized rebuild of an earlier version that hardcoded one store's
-OB windows. Here the rules are data you edit, so the app fits any schedule.
+## Who it's for
 
-## Why this exists
+Detaljhandelsavtalet §7.3 settles the pay form: a **heltidsanställd** is always
+on månadslön, while a **deltidsanställd** is on timlön by default, moving to
+månadslön only if their hours are averaged over 11+ weeks or they agree to it.
 
-Swedish retail and service schedules come with OB surcharges that depend on the
-day and the time of day. Working them out by hand for every shift, every pay
-period, gets old fast — and it is easy to be quietly underpaid without a way to
-check. This app does the arithmetic and shows its work.
+Someone on a monthly salary already knows roughly what lands in their account.
+Someone paid by the hour, on a schedule that shifts week to week with OB spread
+unevenly across it, does not. That second group is who this is for — part-time
+store staff, which is most of Swedish retail.
 
 ## What it does
 
 - Reads a schedule from `.csv` or `.xlsx` (columns `Datum`/`Date`,
   `Start`, `Slut`/`End`, with an optional `Rast`/`Break`)
-- Splits every shift across configurable OB tiers by weekday and time of day
-- Handles shifts that run past midnight, applying the *next* day's rules to the
+- Splits every shift across OB tiers by day type and time of day
+- Handles shifts running past midnight, applying the *next* day's rules to the
   hours after 00:00
-- Spreads unpaid breaks proportionally across tiers, so a break never silently
-  eats the best-paid hours
+- Flags shifts over five hours with no break recorded
 - Shows gross pay, tax at a configurable rate, and net pay, plus a per-shift
   breakdown you can expand
 - Swedish and English, switchable
 - Installable as a PWA; everything is stored in the browser's local storage
 
-## OB rules are configurable
+## The OB rules
 
-A rule set is a list of **tiers** (a name and a supplement percentage) and a
-list of **time windows** (which day types, a start and end time, and the tier
-they pay). Any hour not covered by a window pays the base rate only.
-
-Supplements are paid **on top of** the base rate: an hour at OB 50% with a base
-of 177.44 kr/h pays 177.44 + 88.72 kr.
-
-### Detaljhandel (butik)
-
-Taken verbatim from §8.1 of Detaljhandelsavtalet, 1 April 2025 – 31 March 2027:
+Taken verbatim from §8.1 of Detaljhandelsavtalet, 1 April 2025 – 31 March 2027
+(Svensk Handel / Handelsanställdas förbund):
 
 | When | Pays |
 | --- | --- |
@@ -50,21 +42,16 @@ Taken verbatim from §8.1 of Detaljhandelsavtalet, 1 April 2025 – 31 March 202
 
 > Med lördagar jämställs jul-, nyårs- och midsommarafton.
 
-### Lager & e-handel
+Supplements are paid **on top of** the base rate: an hour at OB 50% with a base
+of 177.44 kr/h pays 177.44 + 88.72 kr.
 
-| When | Pays |
-| --- | --- |
-| måndag–fredag 00.00 – 06.00 | 70 % |
-| måndag–fredag 06.00 – 07.00 | 40 % |
-| måndag–fredag 18.00 – 23.00 | 40 % |
-| måndag–fredag 23.00 – 24.00 | 70 % |
-| lördag 00.00 – 06.00 | 70 % |
-| lördag 06.00 – 23.00 | 40 % |
-| lördag 23.00 – 24.00 | 70 % |
-| söndagar och helgdagar | 100 % |
+### Rules are data, not code
 
-This one comes from Handels' published summary rather than the agreement text,
-so check it against your own avtal.
+A rule set is a list of **tiers** (a name and a supplement percentage) and a
+list of **time windows** (day types, a start and end time, and the tier they
+pay). Any hour not covered by a window pays the base rate only. The preset is
+just the starting point — a different agreement, or a local addition like Coop's
+extra 05.00–06.00 tier, can be entered by hand.
 
 ### Day types, not just weekdays
 
@@ -95,6 +82,16 @@ Arbetstidslagen §15 entitles you to a rast after at most five hours of work, so
 any shift longer than that with no break in the file is flagged — usually it
 means the export left the break out.
 
+## Not covered
+
+- **Övertid and mertid.** §8.1 notes that where overtime and OB overlap you get
+  only the higher percentage, not both. Not modelled.
+- **Månadslön.** §8.1 derives the hourly rate as 1/166 of monthly salary. Out of
+  scope by design — see *Who it's for*.
+- **Agreements other than Detaljhandelsavtalet.** Lager- och e-handel has its
+  own rates and its own structure; rather than ship figures taken from a summary
+  page, there is no preset for it. Build the windows by hand if you need them.
+
 ## Privacy
 
 There is no backend, no account, and no analytics. The schedule is parsed in the
@@ -102,8 +99,8 @@ browser and the results never leave it.
 
 ## Sources
 
-- [Detaljhandelsavtalet 2025–2027 (PDF)](https://www.handels.se/globalassets/avtalsrorelsen/ag-hang/da110.pdf) — §6.1, §6.5, §8.1
-- [Handels: OB-tillägg](https://www.handels.se/fakta-och-rad/lon-ob/ob-tillagg/) — lager & e-handel rates
+- [Detaljhandelsavtalet 2025–2027 (PDF)](https://www.handels.se/globalassets/avtalsrorelsen/ag-hang/da110.pdf) — §6.1, §6.5, §7.3, §8.1
+- [Handels: OB-tillägg](https://www.handels.se/fakta-och-rad/lon-ob/ob-tillagg/)
 - [Handels: När har jag rätt till rast och paus?](https://www.handels.se/fakta-och-rad/faq/g154-naer-har-jag-raett-till-rast-och-paus)
 
 Agreement periods change. If you are reading this after April 2027, re-check the
@@ -121,14 +118,14 @@ app ships no spreadsheet dependency. Persisted state is exposed to React through
 
 ```
 lib/
-  rules.ts    tiers, windows, presets, day classification, validation
-  holidays.ts svenska helgdagar, incl. Easter-derived dates
-  calc.ts     shift splitting and pay totals
-  parse.ts    csv + xlsx readers, schedule column detection
-  storage.ts  localStorage load/save
-  store.ts    useSyncExternalStore bindings
-  i18n.ts     sv/en strings
-  time.ts     time parsing and formatting
+  rules.ts     tiers, windows, preset, day classification, validation
+  holidays.ts  svenska helgdagar, incl. Easter-derived dates
+  calc.ts      shift splitting and pay totals
+  parse.ts     csv + xlsx readers, schedule column detection
+  storage.ts   localStorage load/save
+  store.ts     useSyncExternalStore bindings
+  i18n.ts      sv/en strings
+  time.ts      time parsing and formatting
 ```
 
 ## Running it locally

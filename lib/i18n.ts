@@ -5,8 +5,8 @@ export const LANGUAGES: Language[] = ["sv", "en"];
 const dict = {
   appName: { sv: "Lönetracker", en: "Lönetracker" },
   tagline: {
-    sv: "Räkna ut lön med OB-tillägg från ditt schema.",
-    en: "Work out pay with OB supplements straight from your schedule.",
+    sv: "För dig som jobbar i butik och har timlön. Ladda upp schemat och se vad månaden faktiskt ger, med OB-tillägg inräknade.",
+    en: "For hourly-paid retail staff. Upload your schedule and see what the month actually pays, OB supplements included.",
   },
   privacy: {
     sv: "Allt räknas ut i din webbläsare och sparas lokalt. Inget schema och ingen lön skickas någonstans.",
@@ -54,8 +54,8 @@ const dict = {
     en: "OB supplements are paid on top of the base rate. Hours outside every window pay base only.",
   },
   rulesDisclaimer: {
-    sv: "Detaljhandel följer §8.1 i Detaljhandelsavtalet 2025–2027. Lager & e-handel bygger på Handels sammanställning, inte avtalstexten. Stäm alltid av mot ditt eget kollektivavtal.",
-    en: "Retail follows §8.1 of Detaljhandelsavtalet 2025–2027. Warehouse & e-commerce is based on the union's summary, not the agreement text. Always check against your own collective agreement.",
+    sv: "Förinställningen är hämtad ur §8.1 i Detaljhandelsavtalet 2025–2027. Har du ett annat avtal, eller lokala tillägg, kan du ändra reglerna själv.",
+    en: "The preset is taken from §8.1 of Detaljhandelsavtalet 2025–2027. On a different agreement, or with local additions, you can edit the rules yourself.",
   },
   dayEve: { sv: "Afton", en: "Eve" },
   dayHoliday: { sv: "Helgdag", en: "Holiday" },
@@ -64,8 +64,7 @@ const dict = {
     en: "Holiday covers Swedish public holidays whatever weekday they fall on. Eve is Christmas, New Year's and Midsummer Eve, which the agreement equates with Saturdays.",
   },
   loadPreset: { sv: "Läs in förinställning", en: "Load preset" },
-  presetDetaljhandel: { sv: "Detaljhandel", en: "Retail" },
-  presetLager: { sv: "Lager & e-handel", en: "Warehouse & e-commerce" },
+  presetDetaljhandel: { sv: "Handels detaljhandel", en: "Handels retail" },
   clearRules: { sv: "Töm regler", en: "Clear rules" },
   tiers: { sv: "Nivåer", en: "Tiers" },
   addTier: { sv: "Lägg till nivå", en: "Add tier" },
