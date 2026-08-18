@@ -1,5 +1,5 @@
-import { segmentsForDay } from "./rules";
-import { addDays, weekdayOf } from "./time";
+import { classifyDay, segmentsForDay } from "./rules";
+import { addDays } from "./time";
 import type { RuleSet, Settings, Shift } from "./types";
 
 /** Minutes worked per tier. The empty-string key holds plain base-rate minutes. */
@@ -14,6 +14,12 @@ export type ShiftResult = {
   /** Clock time from start to end, break included — used for shift duration. */
   spanMinutes: number;
   breakMinutes: number;
+  /**
+   * Scheduled more than five hours with no rast recorded. Arbetstidslagen §15
+   * entitles the worker to one, so this usually means the schedule export left
+   * the break out — or that the schedule itself is non-compliant.
+   */
+  missingBreak: boolean;
   perTier: TierMinutes;
   /** Base pay on every paid hour, before any supplement. */
   baseAmount: number;
@@ -39,6 +45,9 @@ export type Totals = {
  * Shifts that run past midnight are walked day by day, so the hours after
  * midnight are matched against the *next* day's windows — a Saturday 18:00–02:00
  * shift correctly pays Sunday rates for its last two hours.
+ *
+ * Each day is classified before matching, so a public holiday pays holiday
+ * rates whatever weekday it lands on.
  */
 export function splitShift(shift: Shift, ruleSet: RuleSet): TierMinutes {
   const out: TierMinutes = { [BASE_KEY]: 0 };
@@ -48,9 +57,9 @@ export function splitShift(shift: Shift, ruleSet: RuleSet): TierMinutes {
     const dayIndex = Math.floor(cursor / 1440);
     const dayStart = dayIndex * 1440;
     const chunkEnd = Math.min(shift.endMin, dayStart + 1440);
-    const dow = weekdayOf(addDays(shift.date, dayIndex));
+    const day = classifyDay(addDays(shift.date, dayIndex));
 
-    for (const seg of segmentsForDay(ruleSet, dow)) {
+    for (const seg of segmentsForDay(ruleSet, day)) {
       const overlap =
         Math.min(chunkEnd - dayStart, seg.to) - Math.max(cursor - dayStart, seg.from);
       if (overlap > 0) {
@@ -70,9 +79,13 @@ export function computeShift(shift: Shift, ruleSet: RuleSet, settings: Settings)
   const rawTotal = Object.values(raw).reduce((a, b) => a + b, 0);
   const breakMinutes = Math.max(0, shift.breakMin || 0);
 
-  // The unpaid break is spread proportionally over the tiers rather than taken
-  // off the end, so a break never silently eats the highest-paid hours.
-  const factor = rawTotal > 0 ? Math.max(0, rawTotal - breakMinutes) / rawTotal : 1;
+  // A rast is unpaid and falls outside working time (Detaljhandelsavtalet
+  // §6.1); a måltidsuppehåll or paus counts as working time and is not
+  // deducted at all. When it is deducted, it is spread proportionally over the
+  // tiers rather than taken off the end, since the schedule rarely says when
+  // the break fell — this stops it from silently eating the best-paid hours.
+  const deducted = settings.breakIsPaid ? 0 : breakMinutes;
+  const factor = rawTotal > 0 ? Math.max(0, rawTotal - deducted) / rawTotal : 1;
 
   const perTier: TierMinutes = {};
   for (const [key, minutes] of Object.entries(raw)) perTier[key] = minutes * factor;
@@ -94,6 +107,7 @@ export function computeShift(shift: Shift, ruleSet: RuleSet, settings: Settings)
     paidMinutes,
     spanMinutes: shift.endMin - shift.startMin,
     breakMinutes,
+    missingBreak: breakMinutes === 0 && shift.endMin - shift.startMin > 5 * 60,
     perTier,
     baseAmount,
     tierAmounts,

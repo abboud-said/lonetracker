@@ -43,6 +43,14 @@ export function ShiftList({
                 <span className="text-sm text-muted tabular">
                   {hhmm(r.shift.startMin)}–{hhmm(r.shift.endMin)}
                 </span>
+                {r.missingBreak ? (
+                  <span
+                    title={t("missingBreakHint", lang)}
+                    className="text-[0.7rem] font-medium text-danger border border-danger/40 rounded px-1.5 py-0.5"
+                  >
+                    {t("missingBreak", lang)}
+                  </span>
+                ) : null}
                 <span className="ml-auto text-sm font-medium tabular">
                   {money(r.gross, lang)}
                 </span>
@@ -61,8 +69,11 @@ export function ShiftList({
                   {r.breakMinutes > 0 ? (
                     <Row
                       label={t("breakLabel", lang)}
-                      value={`− ${hours(r.breakMinutes, lang)}`}
+                      value={hours(r.breakMinutes, lang)}
                     />
+                  ) : null}
+                  {r.missingBreak ? (
+                    <p className="text-xs text-danger mt-1">{t("missingBreakHint", lang)}</p>
                   ) : null}
                 </div>
               ) : null}

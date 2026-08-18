@@ -13,13 +13,20 @@ export type ObTier = {
 };
 
 /**
- * A slice of the clock on given weekdays that pays a tier. Minutes are counted
+ * What a calendar date counts as when matching rules. Beyond the seven
+ * weekdays, a date can be a public holiday, or one of the three eves that
+ * Detaljhandelsavtalet §8.1 equates with Saturdays.
+ */
+export type DayKey = Weekday | "holiday" | "eve";
+
+/**
+ * A slice of the clock on given day types that pays a tier. Minutes are counted
  * from midnight, so `to: 1440` means "up to end of day". Windows may not
  * overlap within a rule set — validateRuleSet enforces that.
  */
 export type ObWindow = {
   id: string;
-  days: Weekday[];
+  days: DayKey[];
   from: number;
   to: number;
   tierId: string;
@@ -49,6 +56,13 @@ export type Shift = {
 export type Settings = {
   baseRate: number;
   taxRate: number;
+  /**
+   * Rast is unpaid and outside working time (Detaljhandelsavtalet §6.1), so it
+   * is deducted by default. A måltidsuppehåll under §6.5, and any paus under
+   * arbetstidslagen, counts as working time — set this when the break column
+   * holds one of those instead.
+   */
+  breakIsPaid: boolean;
 };
 
 export type Language = "sv" | "en";

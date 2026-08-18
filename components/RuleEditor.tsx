@@ -2,10 +2,23 @@
 
 import { useState } from "react";
 import { t } from "@/lib/i18n";
-import { ALL_DAYS, emptyRuleSet, handelsPreset, newId, validateRuleSet } from "@/lib/rules";
+import {
+  ALL_DAY_KEYS,
+  detaljhandelPreset,
+  emptyRuleSet,
+  lagerPreset,
+  newId,
+  validateRuleSet,
+} from "@/lib/rules";
 import { fromHhmm, hhmm, parseNumber, weekdayLabel } from "@/lib/time";
-import type { Language, ObTier, ObWindow, RuleSet, Weekday } from "@/lib/types";
+import type { DayKey, Language, ObTier, ObWindow, RuleSet } from "@/lib/types";
 import { Button, Section, TextInput } from "./ui";
+
+function dayKeyLabel(day: DayKey, lang: Language): string {
+  if (day === "eve") return t("dayEve", lang);
+  if (day === "holiday") return t("dayHoliday", lang);
+  return weekdayLabel(day, lang);
+}
 
 /** 24:00 is a valid window edge but wraps to 00:00 under normal formatting. */
 function timeLabel(min: number): string {
@@ -105,7 +118,7 @@ export function RuleEditor({
     });
   };
 
-  const toggleDay = (w: ObWindow, day: Weekday) => {
+  const toggleDay = (w: ObWindow, day: DayKey) => {
     const days = w.days.includes(day) ? w.days.filter((d) => d !== day) : [...w.days, day];
     updateWindow(w.id, { days });
   };
@@ -116,14 +129,18 @@ export function RuleEditor({
       hint={t("rulesHint", lang)}
       actions={
         <>
-          <Button onClick={() => onChange(handelsPreset())}>{t("presetHandels", lang)}</Button>
+          <Button onClick={() => onChange(detaljhandelPreset())}>
+            {t("presetDetaljhandel", lang)}
+          </Button>
+          <Button onClick={() => onChange(lagerPreset())}>{t("presetLager", lang)}</Button>
           <Button variant="quiet" onClick={() => onChange(emptyRuleSet(ruleSet.name))}>
             {t("clearRules", lang)}
           </Button>
         </>
       }
     >
-      <p className="text-xs text-muted mb-5 max-w-prose">{t("rulesDisclaimer", lang)}</p>
+      <p className="text-xs text-muted mb-2 max-w-prose">{t("rulesDisclaimer", lang)}</p>
+      <p className="text-xs text-muted mb-5 max-w-prose">{t("dayTypesHint", lang)}</p>
 
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
@@ -220,11 +237,11 @@ export function RuleEditor({
                   </div>
 
                   <div className="flex flex-wrap gap-1.5">
-                    {ALL_DAYS.map((day) => {
+                    {ALL_DAY_KEYS.map((day) => {
                       const on = w.days.includes(day);
                       return (
                         <button
-                          key={day}
+                          key={String(day)}
                           type="button"
                           onClick={() => toggleDay(w, day)}
                           aria-pressed={on}
@@ -234,7 +251,7 @@ export function RuleEditor({
                               : "border-border text-muted hover:text-foreground"
                           }`}
                         >
-                          {weekdayLabel(day, lang)}
+                          {dayKeyLabel(day, lang)}
                         </button>
                       );
                     })}

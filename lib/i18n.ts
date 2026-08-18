@@ -54,11 +54,18 @@ const dict = {
     en: "OB supplements are paid on top of the base rate. Hours outside every window pay base only.",
   },
   rulesDisclaimer: {
-    sv: "Förinställningen följer ett Handels-liknande detaljhandelsschema. Stäm av mot ditt eget kollektivavtal innan du litar på siffrorna.",
-    en: "The preset follows a Handels-style retail schedule. Check it against your own collective agreement before trusting the numbers.",
+    sv: "Detaljhandel följer §8.1 i Detaljhandelsavtalet 2025–2027. Lager & e-handel bygger på Handels sammanställning, inte avtalstexten. Stäm alltid av mot ditt eget kollektivavtal.",
+    en: "Retail follows §8.1 of Detaljhandelsavtalet 2025–2027. Warehouse & e-commerce is based on the union's summary, not the agreement text. Always check against your own collective agreement.",
+  },
+  dayEve: { sv: "Afton", en: "Eve" },
+  dayHoliday: { sv: "Helgdag", en: "Holiday" },
+  dayTypesHint: {
+    sv: "Helgdag gäller röda dagar oavsett veckodag. Afton är jul-, nyårs- och midsommarafton, som avtalet jämställer med lördagar.",
+    en: "Holiday covers Swedish public holidays whatever weekday they fall on. Eve is Christmas, New Year's and Midsummer Eve, which the agreement equates with Saturdays.",
   },
   loadPreset: { sv: "Läs in förinställning", en: "Load preset" },
-  presetHandels: { sv: "Handels – detaljhandel", en: "Handels – retail" },
+  presetDetaljhandel: { sv: "Detaljhandel", en: "Retail" },
+  presetLager: { sv: "Lager & e-handel", en: "Warehouse & e-commerce" },
   clearRules: { sv: "Töm regler", en: "Clear rules" },
   tiers: { sv: "Nivåer", en: "Tiers" },
   addTier: { sv: "Lägg till nivå", en: "Add tier" },
@@ -93,6 +100,19 @@ const dict = {
   net: { sv: "Nettolön", en: "Net pay" },
   shifts: { sv: "Pass", en: "Shifts" },
   breakLabel: { sv: "Rast", en: "Break" },
+  breakPaid: { sv: "Rasten är betald", en: "Break is paid" },
+  breakPaidHint: {
+    sv: "Rast är obetald och räknas inte som arbetstid (§6.1). Måltidsuppehåll (§6.5) och kortare pauser räknas in i arbetstiden — kryssa i rutan då.",
+    en: "A rast is unpaid and outside working time (§6.1). A måltidsuppehåll (§6.5) and short pauses count as working time — tick the box in that case.",
+  },
+  missingBreak: {
+    sv: "Över 5 h utan rast",
+    en: "Over 5 h with no break",
+  },
+  missingBreakHint: {
+    sv: "Arbetstidslagen §15 ger dig rast senast efter 5 timmars arbete. Avtalet sätter ingen minsta längd — den bestäms av schemat. Saknas rasten i filen räknas passet som helt betalt här.",
+    en: "Arbetstidslagen §15 entitles you to a break after at most 5 hours of work. The agreement sets no minimum length — the schedule decides. If the break is missing from the file, the shift is counted as fully paid here.",
+  },
   perHour: { sv: "kr/h", en: "kr/h" },
   uploadToSee: {
     sv: "Ladda upp ett schema för att se din lön.",

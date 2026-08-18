@@ -1,4 +1,4 @@
-import { handelsPreset } from "./rules";
+import { detaljhandelPreset } from "./rules";
 import type { Language, RuleSet, Settings, Shift } from "./types";
 
 const KEY = "lonetracker.v2";
@@ -13,8 +13,8 @@ export type AppState = {
 
 export function defaultState(): AppState {
   return {
-    settings: { baseRate: 177.44, taxRate: 30 },
-    ruleSet: handelsPreset(),
+    settings: { baseRate: 177.44, taxRate: 30, breakIsPaid: false },
+    ruleSet: detaljhandelPreset(),
     shifts: [],
     fileName: null,
     language: "sv",
@@ -37,6 +37,7 @@ export function loadState(): AppState {
       settings: {
         baseRate: numberOr(parsed.settings?.baseRate, fallback.settings.baseRate),
         taxRate: numberOr(parsed.settings?.taxRate, fallback.settings.taxRate),
+        breakIsPaid: parsed.settings?.breakIsPaid === true,
       },
       ruleSet: isRuleSet(parsed.ruleSet) ? parsed.ruleSet : fallback.ruleSet,
       shifts: Array.isArray(parsed.shifts) ? parsed.shifts.filter(isShift) : [],

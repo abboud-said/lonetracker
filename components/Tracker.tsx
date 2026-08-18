@@ -114,6 +114,21 @@ export function Tracker() {
             />
           </Field>
         </div>
+
+        <label className="flex items-start gap-2.5 mt-5 cursor-pointer max-w-prose">
+          <input
+            type="checkbox"
+            checked={settings.breakIsPaid}
+            onChange={(e) =>
+              patch({ settings: { ...settings, breakIsPaid: e.target.checked } })
+            }
+            className="mt-0.5 accent-accent cursor-pointer"
+          />
+          <span>
+            <span className="text-sm font-medium">{t("breakPaid", lang)}</span>
+            <span className="block text-xs text-muted mt-0.5">{t("breakPaidHint", lang)}</span>
+          </span>
+        </label>
       </Section>
 
       <Summary
