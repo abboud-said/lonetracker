@@ -69,6 +69,11 @@ export type Settings = {
    * off a payslip ("Semesterlön betald ... a 1 622,25") and typed in.
    */
   semesterPayPerDay: number;
+  /**
+   * Agreed average working hours per week, from the anställningsbevis. Only
+   * used to size karensperioden, which §15.4 defines as 20 % of it.
+   */
+  weeklyHours: number;
 };
 
 export type Language = "sv" | "en";

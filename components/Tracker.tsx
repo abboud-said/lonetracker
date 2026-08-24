@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { computeShift, computeTotals } from "@/lib/calc";
 import { parseErrorKey, t, type MessageKey } from "@/lib/i18n";
-import { parseScheduleFile, ScheduleParseError } from "@/lib/parse";
+import { NO_LEAVE, parseScheduleFile, ScheduleParseError } from "@/lib/parse";
 import { getServerSnapshot, getSnapshot, setAppState, subscribe } from "@/lib/store";
 import type { AppState } from "@/lib/storage";
 import { parseNumber } from "@/lib/time";
@@ -19,15 +19,15 @@ export function Tracker() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const { settings, ruleSet, shifts, absenceDays, fileName, language: lang } = state;
+  const { settings, ruleSet, shifts, leave, fileName, language: lang } = state;
 
   const results = useMemo(
     () => shifts.map((shift) => computeShift(shift, ruleSet, settings)),
     [shifts, ruleSet, settings],
   );
   const totals = useMemo(
-    () => computeTotals(results, settings, absenceDays),
-    [results, settings, absenceDays],
+    () => computeTotals(results, settings, leave, ruleSet),
+    [results, settings, leave, ruleSet],
   );
 
   const patch = (next: Partial<AppState>) => setAppState((prev) => ({ ...prev, ...next }));
@@ -35,11 +35,7 @@ export function Tracker() {
   async function handleFile(file: File) {
     try {
       const parsed = await parseScheduleFile(file);
-      patch({
-        shifts: parsed.shifts,
-        absenceDays: parsed.absenceDays,
-        fileName: file.name,
-      });
+      patch({ shifts: parsed.shifts, leave: parsed.leave, fileName: file.name });
       setErrorKey(null);
     } catch (err) {
       setErrorKey(parseErrorKey(err instanceof ScheduleParseError ? err.code : "unknown"));
@@ -68,7 +64,7 @@ export function Tracker() {
               <Button
                 variant="quiet"
                 onClick={() => {
-                  patch({ shifts: [], absenceDays: 0, fileName: null });
+                  patch({ shifts: [], leave: NO_LEAVE(), fileName: null });
                   setErrorKey(null);
                 }}
               >
@@ -132,6 +128,7 @@ export function Tracker() {
         lang={lang}
         hasShifts={shifts.length > 0}
         onSemesterPayChange={(v) => patch({ settings: { ...settings, semesterPayPerDay: v } })}
+        onWeeklyHoursChange={(v) => patch({ settings: { ...settings, weeklyHours: v } })}
       />
 
       <ShiftList results={results} ruleSet={ruleSet} lang={lang} />

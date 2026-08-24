@@ -133,7 +133,32 @@ const dict = {
     en: "The OB rules already follow Detaljhandelsavtalet. You only need this if you have local additions, such as Coop's extra morning OB.",
   },
 
+  semesterDay: { sv: "semesterdag", en: "vacation day" },
   semesterDays: { sv: "semesterdagar", en: "vacation days" },
+  sickDay: { sv: "sjukdag", en: "sick day" },
+  sickDays: { sv: "sjukdagar", en: "sick days" },
+  otherLeaveDay: { sv: "dag annan frånvaro", en: "day of other leave" },
+  otherLeaveDays: { sv: "dagar annan frånvaro", en: "days of other leave" },
+  notIncluded: { sv: "räknas inte med", en: "not included" },
+  hoursPerWeek: { sv: "h/vecka", en: "h/week" },
+  karens: { sv: "Karensperiod (obetald)", en: "Karens period (unpaid)" },
+  sickPay: { sv: "Sjuklön (80 %)", en: "Sick pay (80 %)" },
+  sickHint: {
+    sv: "Sjuklön är 80 % av lönen du skulle fått, OB inräknat (§15.4). Karensperioden är 20 % av din genomsnittliga arbetsvecka och är obetald — fyll i dina avtalade timmar per vecka från anställningsbeviset.",
+    en: "Sick pay is 80 % of what you would have earned, OB included (§15.4). The karens period is 20 % of your average working week and is unpaid — enter your agreed weekly hours from your contract.",
+  },
+  needWeeklyHours: {
+    sv: "Fyll i timmar per vecka för att räkna ut sjuklönen.",
+    en: "Enter your weekly hours to calculate sick pay.",
+  },
+  beyondSickPeriod: {
+    sv: "dagar ligger efter dag 14 — då betalar Försäkringskassan, inte arbetsgivaren. De räknas inte med.",
+    en: "days fall past day 14 — Försäkringskassan pays those, not the employer. They are not included.",
+  },
+  otherLeaveHint: {
+    sv: "Tjänstledighet och liknande betalas olika, och filen säger inte vilket. Kolla lönebeskedet för de här dagarna.",
+    en: "Unpaid leave and similar are paid differently, and the file does not say which. Check your payslip for these days.",
+  },
   perDay: { sv: "kr/dag", en: "kr/day" },
   semesterPay: { sv: "Semesterlön", en: "Vacation pay" },
   semesterHint: {

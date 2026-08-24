@@ -175,28 +175,20 @@ const START_HEADERS = ["start", "från", "fran", "from", "in", "början", "borja
 const END_HEADERS = ["slut", "end", "till", "to", "out", "end time"];
 const BREAK_HEADERS = ["rast", "break", "paus", "lunch", "obetald rast"];
 
-// Columns that record time away from work. A day where these cover the whole
-// shift was not worked at all and is not paid by the hour — semesterlön,
-// sjuklön and the rest are their own line on the payslip, and counting such
-// days as shifts made a month with four vacation days come out 25.5 hours
-// high.
+// Columns that record time away from work, split by what the leave actually
+// is, because the money behind each is different: semesterlön comes from
+// average earnings, sjuklön is a reduced rate with a karensavdrag, and the
+// rest may not be paid at all. Lumping them together let sick days be paid at
+// the vacation rate, which overstates a month rather than merely missing it.
 //
-// A few minutes in one of these columns is another matter entirely: it means
-// arriving late, and the day was still worked. Real exports carry 1-5 minute
-// values on ordinary days, so only a full shift's worth counts as leave.
-const ABSENCE_HEADERS = [
-  "semester",
-  "frånvaro",
-  "franvaro",
-  "heldagsfrånvaro",
-  "sjuk",
-  "tj ledig",
-  "f ledig",
-  "tf penning",
-  "absence",
-  "vacation",
-  "holiday leave",
+// "Frånvaro" is the umbrella column and is set alongside the specific one, so
+// it is only consulted when nothing more precise says what the leave was.
+const LEAVE_KINDS = [
+  { kind: "semester" as const, headers: ["semester", "vacation"] },
+  { kind: "sick" as const, headers: ["sjuk", "sick"] },
+  { kind: "other" as const, headers: ["tj ledig", "f ledig", "tf penning", "föräldraledig"] },
 ];
+const GENERIC_LEAVE_HEADERS = ["frånvaro", "franvaro", "heldagsfrånvaro", "absence"];
 
 const norm = (c: unknown) => String(c ?? "").trim().toLowerCase();
 
@@ -216,10 +208,22 @@ const norm = (c: unknown) => String(c ?? "").trim().toLowerCase();
  * afterwards as mertid. Those are paid but look identical to clocking out
  * late, so they are left out rather than guessed at.
  */
+/**
+ * Days the export marked as leave rather than work, keeping the hours that
+ * would have been worked — sjuklön is calculated from exactly that, including
+ * the OB those hours would have earned.
+ */
+export type LeaveDays = {
+  semester: Shift[];
+  sick: Shift[];
+  other: Shift[];
+};
+
+export const NO_LEAVE = (): LeaveDays => ({ semester: [], sick: [], other: [] });
+
 export type ParsedSchedule = {
   shifts: Shift[];
-  /** Days dropped because the export marked them as leave rather than work. */
-  absenceDays: number;
+  leave: LeaveDays;
 };
 
 export function rowsToShifts(rows: Row[]): ParsedSchedule {
@@ -244,8 +248,15 @@ export function rowsToShifts(rows: Row[]): ParsedSchedule {
 
   const startIdxs = indexesOf(START_HEADERS);
   const endIdxs = indexesOf(END_HEADERS);
-  const absenceIdxs = headerRow.reduce<number[]>((acc, c, idx) => {
-    if (ABSENCE_HEADERS.some((a) => norm(c) === a)) acc.push(idx);
+  const leaveCols = LEAVE_KINDS.map((k) => ({
+    kind: k.kind,
+    idxs: headerRow.reduce<number[]>((acc, c, idx) => {
+      if (k.headers.includes(norm(c))) acc.push(idx);
+      return acc;
+    }, []),
+  }));
+  const genericIdxs = headerRow.reduce<number[]>((acc, c, idx) => {
+    if (GENERIC_LEAVE_HEADERS.includes(norm(c))) acc.push(idx);
     return acc;
   }, []);
 
@@ -266,7 +277,7 @@ export function rowsToShifts(rows: Row[]): ParsedSchedule {
   if (blocks.length === 0) throw new ScheduleParseError("noTimes");
 
   const shifts: Shift[] = [];
-  let absenceDays = 0;
+  const leave: LeaveDays = NO_LEAVE();
   for (let i = headerIdx + 1; i < rows.length; i++) {
     const row = rows[i];
     const dateRaw = row[dateCol];
@@ -294,9 +305,25 @@ export function rowsToShifts(rows: Row[]): ParsedSchedule {
     if (startMin == null || rawEnd == null || startMin >= rawEnd) continue;
 
     const scheduled = rawEnd - startMin - breakMin;
-    const absence = absenceIdxs.reduce((sum, idx) => sum + (toMinutes(row[idx]) ?? 0), 0);
-    if (scheduled > 0 && absence >= scheduled - 2) {
-      absenceDays++;
+    const byKind = leaveCols.map((c) => ({
+      kind: c.kind,
+      minutes: c.idxs.reduce((sum, idx) => sum + (toMinutes(row[idx]) ?? 0), 0),
+    }));
+    const generic = genericIdxs.reduce((max, idx) => Math.max(max, toMinutes(row[idx]) ?? 0), 0);
+    const named = byKind.reduce((sum, c) => sum + c.minutes, 0);
+
+    if (scheduled > 0 && Math.max(named, generic) >= scheduled - 2) {
+      // Whichever named kind accounts for most of the day wins; a day flagged
+      // only by the umbrella column has no stated reason, so it counts as other.
+      const best = byKind.reduce((a, b) => (b.minutes > a.minutes ? b : a));
+      const endMin = rawEnd <= startMin ? rawEnd + 1440 : rawEnd;
+      leave[best.minutes > 0 ? best.kind : "other"].push({
+        id: newId(),
+        date: m[0],
+        startMin,
+        endMin,
+        breakMin,
+      });
       continue;
     }
 
@@ -308,8 +335,12 @@ export function rowsToShifts(rows: Row[]): ParsedSchedule {
   }
 
   shifts.sort((a, b) => a.date.localeCompare(b.date) || a.startMin - b.startMin);
-  if (shifts.length === 0 && absenceDays === 0) throw new ScheduleParseError("noShifts");
-  return { shifts, absenceDays };
+  const anyLeave = leave.semester.length + leave.sick.length + leave.other.length;
+  if (shifts.length === 0 && anyLeave === 0) throw new ScheduleParseError("noShifts");
+  for (const list of Object.values(leave)) {
+    list.sort((a, b) => a.date.localeCompare(b.date));
+  }
+  return { shifts, leave };
 }
 
 /** Read an uploaded schedule file (.csv or .xlsx) into shifts. */

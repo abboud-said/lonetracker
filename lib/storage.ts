@@ -1,3 +1,4 @@
+import { NO_LEAVE, type LeaveDays } from "./parse";
 import { detaljhandelPreset } from "./rules";
 import type { Language, RuleSet, Settings, Shift } from "./types";
 
@@ -7,17 +8,17 @@ export type AppState = {
   settings: Settings;
   ruleSet: RuleSet;
   shifts: Shift[];
-  absenceDays: number;
+  leave: LeaveDays;
   fileName: string | null;
   language: Language;
 };
 
 export function defaultState(): AppState {
   return {
-    settings: { baseRate: 177.44, taxRate: 30, breakIsPaid: false, semesterPayPerDay: 0 },
+    settings: { baseRate: 177.44, taxRate: 30, breakIsPaid: false, semesterPayPerDay: 0, weeklyHours: 0 },
     ruleSet: detaljhandelPreset(),
     shifts: [],
-    absenceDays: 0,
+    leave: NO_LEAVE(),
     fileName: null,
     language: "sv",
   };
@@ -41,10 +42,15 @@ export function loadState(): AppState {
         taxRate: numberOr(parsed.settings?.taxRate, fallback.settings.taxRate),
         breakIsPaid: parsed.settings?.breakIsPaid === true,
         semesterPayPerDay: numberOr(parsed.settings?.semesterPayPerDay, 0),
+        weeklyHours: numberOr(parsed.settings?.weeklyHours, 0),
       },
       ruleSet: isRuleSet(parsed.ruleSet) ? parsed.ruleSet : fallback.ruleSet,
       shifts: Array.isArray(parsed.shifts) ? parsed.shifts.filter(isShift) : [],
-      absenceDays: numberOr(parsed.absenceDays, 0),
+      leave: {
+        semester: (parsed.leave?.semester ?? []).filter(isShift),
+        sick: (parsed.leave?.sick ?? []).filter(isShift),
+        other: (parsed.leave?.other ?? []).filter(isShift),
+      },
       fileName: typeof parsed.fileName === "string" ? parsed.fileName : null,
       language: parsed.language === "en" || parsed.language === "sv" ? parsed.language : fallback.language,
     };

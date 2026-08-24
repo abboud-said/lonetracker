@@ -14,6 +14,7 @@ export function Summary({
   lang,
   hasShifts,
   onSemesterPayChange,
+  onWeeklyHoursChange,
 }: {
   totals: Totals;
   ruleSet: RuleSet;
@@ -21,8 +22,12 @@ export function Summary({
   lang: Language;
   hasShifts: boolean;
   onSemesterPayChange: (value: number) => void;
+  onWeeklyHoursChange: (value: number) => void;
 }) {
-  if (!hasShifts && totals.absenceDays === 0) {
+  const { semester, sick, other } = totals.leave;
+  const hasLeave = semester.length + sick.length + other.length > 0;
+
+  if (!hasShifts && !hasLeave) {
     return (
       <Section title={t("summary", lang)}>
         <p className="text-sm text-muted">{t("uploadToSee", lang)}</p>
@@ -57,12 +62,13 @@ export function Summary({
         })}
       </div>
 
-      {/* Only surfaced in months that actually contain leave. */}
-      {totals.absenceDays > 0 ? (
+      {/* Each kind of leave is paid under its own rules, so none of them are
+          rolled together, and none appear in a month without leave. */}
+      {semester.length > 0 ? (
         <div className="mt-4 rounded-lg border border-border px-3.5 py-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="text-sm">
-              {totals.absenceDays} {t("semesterDays", lang)}
+              {semester.length} {t(semester.length === 1 ? "semesterDay" : "semesterDays", lang)}
             </span>
             <span className="flex items-center gap-2">
               <TextInput
@@ -82,6 +88,64 @@ export function Summary({
               <span className="tabular text-sm font-medium">{money(totals.semesterPay, lang)}</span>
             </div>
           ) : null}
+        </div>
+      ) : null}
+
+      {sick.length > 0 ? (
+        <div className="mt-3 rounded-lg border border-border px-3.5 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="text-sm">
+              {sick.length} {t(sick.length === 1 ? "sickDay" : "sickDays", lang)}
+            </span>
+            <span className="flex items-center gap-2">
+              <TextInput
+                value={settings.weeklyHours ? String(settings.weeklyHours) : ""}
+                inputMode="decimal"
+                placeholder="0"
+                className="w-20 text-right"
+                onChange={(v) => onWeeklyHoursChange(parseNumber(v))}
+              />
+              <span className="text-sm text-muted">{t("hoursPerWeek", lang)}</span>
+            </span>
+          </div>
+          <p className="text-xs text-muted mt-1.5">{t("sickHint", lang)}</p>
+
+          {settings.weeklyHours > 0 ? (
+            <div className="mt-2 pt-2 border-t border-border flex flex-col gap-1">
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="text-sm text-muted">{t("karens", lang)}</span>
+                <span className="tabular text-sm text-muted">
+                  {hours(totals.sick.karensMinutes, lang)}
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="text-sm">{t("sickPay", lang)}</span>
+                <span className="tabular text-sm font-medium">
+                  {money(totals.sick.amount, lang)}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-danger mt-2">{t("needWeeklyHours", lang)}</p>
+          )}
+
+          {totals.sick.daysBeyondPeriod > 0 ? (
+            <p className="text-xs text-danger mt-2">
+              {totals.sick.daysBeyondPeriod} {t("beyondSickPeriod", lang)}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {other.length > 0 ? (
+        <div className="mt-3 rounded-lg border border-border px-3.5 py-3">
+          <div className="flex items-baseline justify-between gap-4">
+            <span className="text-sm">
+              {other.length} {t(other.length === 1 ? "otherLeaveDay" : "otherLeaveDays", lang)}
+            </span>
+            <span className="text-sm text-muted">{t("notIncluded", lang)}</span>
+          </div>
+          <p className="text-xs text-muted mt-1.5">{t("otherLeaveHint", lang)}</p>
         </div>
       ) : null}
 

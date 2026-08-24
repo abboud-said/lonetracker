@@ -1,5 +1,6 @@
 import { classifyDay, segmentsForDay } from "./rules";
 import { addDays } from "./time";
+import { NO_LEAVE, type LeaveDays } from "./parse";
 import type { RuleSet, Settings, Shift } from "./types";
 
 /** Minutes worked per tier. The empty-string key holds plain base-rate minutes. */
@@ -30,9 +31,11 @@ export type ShiftResult = {
 
 export type Totals = {
   shifts: number;
-  /** Days on leave, paid as semesterlön rather than by the hour. */
-  absenceDays: number;
+  /** Days on leave, which are not paid by the hour. */
+  leave: LeaveDays;
+  /** Vacation pay included in the gross. */
   semesterPay: number;
+  sick: SickResult;
   paidMinutes: number;
   perTier: TierMinutes;
   baseAmount: number;
@@ -75,6 +78,132 @@ export function splitShift(shift: Shift, ruleSet: RuleSet): TierMinutes {
   }
 
   return out;
+}
+
+/**
+ * The same walk as splitShift, but keeping the segments in clock order instead
+ * of totalling them. Karensperioden is the *first* part of a sick period, so
+ * it has to be taken off the front of the day rather than off a total.
+ */
+export function shiftSegments(
+  shift: Shift,
+  ruleSet: RuleSet,
+): { tierId: string; minutes: number }[] {
+  const out: { tierId: string; minutes: number }[] = [];
+  let cursor = shift.startMin;
+
+  while (cursor < shift.endMin) {
+    const dayIndex = Math.floor(cursor / 1440);
+    const dayStart = dayIndex * 1440;
+    const chunkEnd = Math.min(shift.endMin, dayStart + 1440);
+    const day = classifyDay(addDays(shift.date, dayIndex));
+
+    for (const seg of segmentsForDay(ruleSet, day)) {
+      const from = Math.max(cursor, seg.from + dayStart);
+      const to = Math.min(chunkEnd, seg.to + dayStart);
+      if (to > from) out.push({ tierId: seg.tierId ?? BASE_KEY, minutes: to - from });
+    }
+    cursor = chunkEnd;
+  }
+
+  return out;
+}
+
+export type SickResult = {
+  /** Hours that fell inside karensperioden and are therefore unpaid. */
+  karensMinutes: number;
+  /** Hours paid at the sjuklön rate. */
+  paidMinutes: number;
+  perTier: TierMinutes;
+  amount: number;
+  /** Days past the fourteenth of a sick period — Försäkringskassan's, not the employer's. */
+  daysBeyondPeriod: number;
+};
+
+const SICK_RATE = 0.8;
+const KARENS_SHARE = 0.2;
+const SICK_PERIOD_DAYS = 14;
+/** A new spell within five calendar days continues the previous one (§15.1). */
+const RELAPSE_DAYS = 5;
+
+function daysBetween(a: string, b: string): number {
+  const [ay, am, ad] = a.split("-").map(Number);
+  const [by, bm, bd] = b.split("-").map(Number);
+  return Math.round(
+    (new Date(by, bm - 1, bd).getTime() - new Date(ay, am - 1, ad).getTime()) / 86400000,
+  );
+}
+
+/**
+ * Sjuklön for an hourly-paid worker, per Detaljhandelsavtalet §15.4.
+ *
+ * Sick days are grouped into periods — a fresh spell starting within five
+ * calendar days of the last continues it, so it draws no second karens. Each
+ * period opens with a karensperiod whose *length in hours* is 20 % of the
+ * agreed average working week, taken from the front; nothing is paid for it.
+ * Everything after is paid at 80 %, including 80 % of the OB those hours would
+ * have earned.
+ */
+export function computeSickPay(
+  sickDays: Shift[],
+  ruleSet: RuleSet,
+  settings: Settings,
+): SickResult {
+  const perTier: TierMinutes = {};
+  let karensMinutes = 0;
+  let paidMinutes = 0;
+  let amount = 0;
+  let daysBeyondPeriod = 0;
+
+  const days = [...sickDays].sort((a, b) => a.date.localeCompare(b.date));
+  const karensPerPeriod = Math.max(0, (settings.weeklyHours || 0) * 60 * KARENS_SHARE);
+
+  let periodStart: string | null = null;
+  let previousDay: string | null = null;
+  let karensLeft = 0;
+
+  for (const day of days) {
+    const isNewPeriod =
+      previousDay == null || daysBetween(previousDay, day.date) > RELAPSE_DAYS;
+    if (isNewPeriod) {
+      periodStart = day.date;
+      karensLeft = karensPerPeriod;
+    }
+    previousDay = day.date;
+
+    // Past day fourteen the employer stops paying and Försäkringskassan starts.
+    if (periodStart != null && daysBetween(periodStart, day.date) >= SICK_PERIOD_DAYS) {
+      daysBeyondPeriod++;
+      continue;
+    }
+
+    // What the day would have paid had it been worked, break included.
+    const worked = computeShift(day, ruleSet, settings);
+    const scale =
+      worked.paidMinutes > 0
+        ? worked.paidMinutes / shiftSegments(day, ruleSet).reduce((a, b) => a + b.minutes, 0)
+        : 0;
+
+    for (const seg of shiftSegments(day, ruleSet)) {
+      let minutes = seg.minutes * scale;
+      if (karensLeft > 0) {
+        const swallowed = Math.min(karensLeft, minutes);
+        karensLeft -= swallowed;
+        karensMinutes += swallowed;
+        minutes -= swallowed;
+      }
+      if (minutes <= 0) continue;
+
+      perTier[seg.tierId] = (perTier[seg.tierId] ?? 0) + minutes;
+      paidMinutes += minutes;
+
+      const tier = ruleSet.tiers.find((t) => t.id === seg.tierId);
+      const hourly = settings.baseRate * (1 + (tier ? tier.percent / 100 : 0));
+      amount += (minutes / 60) * hourly * SICK_RATE;
+    }
+  }
+
+  return { karensMinutes, paidMinutes, perTier, amount, daysBeyondPeriod };
 }
 
 export function computeShift(shift: Shift, ruleSet: RuleSet, settings: Settings): ShiftResult {
@@ -150,7 +279,8 @@ export function computeShift(shift: Shift, ruleSet: RuleSet, settings: Settings)
 export function computeTotals(
   results: ShiftResult[],
   settings: Settings,
-  absenceDays = 0,
+  leave: LeaveDays = NO_LEAVE(),
+  ruleSet?: RuleSet,
 ): Totals {
   const perTier: TierMinutes = {};
   const tierAmounts: Record<string, number> = {};
@@ -172,15 +302,24 @@ export function computeTotals(
 
   // Semesterlön is its own line on the payslip and carries no OB, but it is
   // taxed with everything else, so it joins the gross before tax is taken.
-  const semesterPay = absenceDays * (settings.semesterPayPerDay || 0);
+  //
+  // Other leave stays out — tjänstledighet and the rest may not be paid at all,
+  // and the export does not say which.
+  const semesterPay = leave.semester.length * (settings.semesterPayPerDay || 0);
   gross += semesterPay;
+
+  const sick = ruleSet
+    ? computeSickPay(leave.sick, ruleSet, settings)
+    : { karensMinutes: 0, paidMinutes: 0, perTier: {}, amount: 0, daysBeyondPeriod: 0 };
+  gross += sick.amount;
 
   const tax = gross * (settings.taxRate / 100);
 
   return {
     shifts: results.length,
-    absenceDays,
+    leave,
     semesterPay,
+    sick,
     paidMinutes,
     perTier,
     baseAmount,

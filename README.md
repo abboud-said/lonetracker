@@ -82,15 +82,45 @@ Arbetstidslagen §15 entitles you to a rast after at most five hours of work, so
 any shift longer than that with no break in the file is flagged — usually it
 means the export left the break out.
 
+## Leave
+
+Leave days sit in the export with their scheduled hours intact, so they have to
+be told apart from work — and from each other, since each is paid differently.
+A day counts as leave only when the absence columns cover the whole shift;
+those columns routinely carry a minute or two on ordinary days, meaning someone
+arrived late.
+
+- **Semester** — semesterlön comes from average earnings, not the hourly rate,
+  so it cannot be derived. The day count is shown with a field for the daily
+  rate, which is on any payslip that has one ("Semesterlön betald ... a").
+- **Sjukdom** — calculated per §15.4. Sick days are grouped into periods, where
+  a fresh spell within five calendar days continues the previous one. Each
+  period opens with a karensperiod whose length in hours is 20 % of the agreed
+  working week, taken off the front and unpaid; the rest pays 80 % of what the
+  hours would have earned, OB included. Days past the fourteenth are
+  Försäkringskassan's and are excluded, with a note.
+- **Other leave** — counted and shown, never included. Tjänstledighet and the
+  rest may not be paid at all and the export does not say which.
+
 ## Not covered
 
 - **Övertid and mertid.** §8.1 notes that where overtime and OB overlap you get
-  only the higher percentage, not both. Not modelled.
+  only the higher percentage, not both. Not modelled — and hours worked beyond
+  the schedule and approved afterwards look identical to clocking out late, so
+  they are left out rather than guessed at.
 - **Månadslön.** §8.1 derives the hourly rate as 1/166 of monthly salary. Out of
   scope by design — see *Who it's for*.
 - **Agreements other than Detaljhandelsavtalet.** Lager- och e-handel has its
   own rates and its own structure; rather than ship figures taken from a summary
   page, there is no preset for it. Build the windows by hand if you need them.
+
+## Accuracy
+
+Checked against two real Bestseller time exports and the payslips they
+produced. June and July both land within 1.30 kr on the month, with every OB
+tier exact. The sjuklön path has no payslip behind it yet — it is built from
+§15.4 and verified against hand calculation, not against money actually
+received.
 
 ## Privacy
 
@@ -99,7 +129,8 @@ browser and the results never leave it.
 
 ## Sources
 
-- [Detaljhandelsavtalet 2025–2027 (PDF)](https://www.handels.se/globalassets/avtalsrorelsen/ag-hang/da110.pdf) — §6.1, §6.5, §7.3, §8.1
+- [Detaljhandelsavtalet 2025–2027 (PDF)](https://www.handels.se/globalassets/avtalsrorelsen/ag-hang/da110.pdf) — §6.1, §6.5, §7.3, §8.1, §15.1, §15.4
+- [Försäkringskassan: karensavdrag](https://www.forsakringskassan.se/arbetsgivare/sjukdom-och-skada/om-din-medarbetare-blir-sjuk/karensavdrag)
 - [Handels: OB-tillägg](https://www.handels.se/fakta-och-rad/lon-ob/ob-tillagg/)
 - [Handels: När har jag rätt till rast och paus?](https://www.handels.se/fakta-och-rad/faq/g154-naer-har-jag-raett-till-rast-och-paus)
 
