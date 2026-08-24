@@ -126,6 +126,28 @@ const dict = {
     en: "Upload a schedule to see your pay.",
   },
 
+  howToTitle: { sv: "Så här gör du", en: "Getting started" },
+  step1: {
+    sv: "Fyll i din grundlön per timme. Den står på ditt lönebesked, under \"Timlön\".",
+    en: "Enter your hourly rate. It is on your payslip, on the \"Timlön\" line.",
+  },
+  step2: {
+    sv: "Fyll i din skatteprocent. Ta den från ett lönebesked: skatteavdrag delat med bruttolön, gånger 100. Den är personlig — 30 % som står här från början stämmer sällan.",
+    en: "Enter your tax percentage. Take it from a payslip: tax deducted divided by gross, times 100. It is personal — the 30 % filled in here to begin with is rarely right.",
+  },
+  step3: {
+    sv: "Ladda upp ditt schema. Det är filen \"Attestera tid\" som du laddar ner från schemasystemet (.xlsx eller .csv).",
+    en: "Upload your schedule — the \"Attestera tid\" file you download from the scheduling system (.xlsx or .csv).",
+  },
+  stepNote: {
+    sv: "Bruttolönen är den siffra du kan stämma av mot lönebeskedet. Nettolönen är en uppskattning, eftersom riktig skatt räknas efter skattetabell.",
+    en: "Gross pay is the figure to check against your payslip. Net pay is an estimate, since real tax follows a skattetabell.",
+  },
+  taxHelp: {
+    sv: "skatteavdrag ÷ bruttolön × 100",
+    en: "tax deducted ÷ gross × 100",
+  },
+
   showAdvanced: { sv: "Visa avancerat", en: "Show advanced" },
   hideAdvanced: { sv: "Dölj avancerat", en: "Hide advanced" },
   advancedHint: {

@@ -52,6 +52,28 @@ export function Tracker() {
         <LanguageToggle lang={lang} onChange={(language) => patch({ language })} />
       </header>
 
+      {/* Shown only until a schedule is loaded, so it never becomes clutter for
+          someone who already knows what to do. */}
+      {shifts.length === 0 ? (
+        <section className="bg-accent-soft border border-border rounded-xl p-5 sm:p-6">
+          <h2 className="text-base font-semibold tracking-tight mb-3">{t("howToTitle", lang)}</h2>
+          <ol className="flex flex-col gap-2.5">
+            {([t("step1", lang), t("step2", lang), t("step3", lang)] as const).map((step, i) => (
+              <li key={i} className="flex gap-3 text-sm">
+                <span
+                  aria-hidden
+                  className="shrink-0 w-5 h-5 rounded-full bg-accent text-white text-xs font-semibold flex items-center justify-center mt-px"
+                >
+                  {i + 1}
+                </span>
+                <span className="max-w-prose">{step}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="text-xs text-muted mt-4 max-w-prose">{t("stepNote", lang)}</p>
+        </section>
+      ) : null}
+
       <Section
         title={t("schedule", lang)}
         hint={t("uploadHint", lang)}
@@ -109,14 +131,17 @@ export function Tracker() {
               onChange={(v) => patch({ settings: { ...settings, baseRate: parseNumber(v) } })}
             />
           </Field>
-          <Field label={t("taxRate", lang)} suffix={t("taxRateUnit", lang)}>
-            <TextInput
-              value={String(settings.taxRate)}
-              inputMode="decimal"
-              className="w-20 text-right"
-              onChange={(v) => patch({ settings: { ...settings, taxRate: parseNumber(v) } })}
-            />
-          </Field>
+          <div className="flex flex-col gap-1">
+            <Field label={t("taxRate", lang)} suffix={t("taxRateUnit", lang)}>
+              <TextInput
+                value={String(settings.taxRate)}
+                inputMode="decimal"
+                className="w-20 text-right"
+                onChange={(v) => patch({ settings: { ...settings, taxRate: parseNumber(v) } })}
+              />
+            </Field>
+            <span className="text-xs text-muted">{t("taxHelp", lang)}</span>
+          </div>
         </div>
 
       </Section>
