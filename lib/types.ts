@@ -63,6 +63,12 @@ export type Settings = {
    * holds one of those instead.
    */
   breakIsPaid: boolean;
+  /**
+   * Semesterlön per vacation day, in kronor. The employer works this out from
+   * average earnings, so it cannot be derived from an hourly rate — it is read
+   * off a payslip ("Semesterlön betald ... a 1 622,25") and typed in.
+   */
+  semesterPayPerDay: number;
 };
 
 export type Language = "sv" | "en";

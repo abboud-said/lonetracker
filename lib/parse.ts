@@ -175,6 +175,29 @@ const START_HEADERS = ["start", "från", "fran", "from", "in", "början", "borja
 const END_HEADERS = ["slut", "end", "till", "to", "out", "end time"];
 const BREAK_HEADERS = ["rast", "break", "paus", "lunch", "obetald rast"];
 
+// Columns that record time away from work. A day where these cover the whole
+// shift was not worked at all and is not paid by the hour — semesterlön,
+// sjuklön and the rest are their own line on the payslip, and counting such
+// days as shifts made a month with four vacation days come out 25.5 hours
+// high.
+//
+// A few minutes in one of these columns is another matter entirely: it means
+// arriving late, and the day was still worked. Real exports carry 1-5 minute
+// values on ordinary days, so only a full shift's worth counts as leave.
+const ABSENCE_HEADERS = [
+  "semester",
+  "frånvaro",
+  "franvaro",
+  "heldagsfrånvaro",
+  "sjuk",
+  "tj ledig",
+  "f ledig",
+  "tf penning",
+  "absence",
+  "vacation",
+  "holiday leave",
+];
+
 const norm = (c: unknown) => String(c ?? "").trim().toLowerCase();
 
 /**
@@ -193,7 +216,13 @@ const norm = (c: unknown) => String(c ?? "").trim().toLowerCase();
  * afterwards as mertid. Those are paid but look identical to clocking out
  * late, so they are left out rather than guessed at.
  */
-export function rowsToShifts(rows: Row[]): Shift[] {
+export type ParsedSchedule = {
+  shifts: Shift[];
+  /** Days dropped because the export marked them as leave rather than work. */
+  absenceDays: number;
+};
+
+export function rowsToShifts(rows: Row[]): ParsedSchedule {
   let headerIdx = -1;
   let dateCol = -1;
   for (let i = 0; i < rows.length; i++) {
@@ -215,6 +244,10 @@ export function rowsToShifts(rows: Row[]): Shift[] {
 
   const startIdxs = indexesOf(START_HEADERS);
   const endIdxs = indexesOf(END_HEADERS);
+  const absenceIdxs = headerRow.reduce<number[]>((acc, c, idx) => {
+    if (ABSENCE_HEADERS.some((a) => norm(c) === a)) acc.push(idx);
+    return acc;
+  }, []);
 
   const blocks = startIdxs
     .map((start) => {
@@ -233,12 +266,14 @@ export function rowsToShifts(rows: Row[]): Shift[] {
   if (blocks.length === 0) throw new ScheduleParseError("noTimes");
 
   const shifts: Shift[] = [];
+  let absenceDays = 0;
   for (let i = headerIdx + 1; i < rows.length; i++) {
     const row = rows[i];
     const dateRaw = row[dateCol];
     if (!dateRaw) continue;
     const m = String(dateRaw).match(/(\d{4})-(\d{2})-(\d{2})/);
     if (!m) continue;
+
 
     // Read every block that holds a time for this day, then narrow to the
     // overlap of all of them: pay starts at the later of scheduled and clocked
@@ -258,6 +293,14 @@ export function rowsToShifts(rows: Row[]): Shift[] {
     }
     if (startMin == null || rawEnd == null || startMin >= rawEnd) continue;
 
+    const scheduled = rawEnd - startMin - breakMin;
+    const absence = absenceIdxs.reduce((sum, idx) => sum + (toMinutes(row[idx]) ?? 0), 0);
+    if (scheduled > 0 && absence >= scheduled - 2) {
+      absenceDays++;
+      continue;
+    }
+
+
     // An end time at or before the start means the shift ran past midnight.
     const endMin = rawEnd <= startMin ? rawEnd + 1440 : rawEnd;
 
@@ -265,12 +308,12 @@ export function rowsToShifts(rows: Row[]): Shift[] {
   }
 
   shifts.sort((a, b) => a.date.localeCompare(b.date) || a.startMin - b.startMin);
-  if (shifts.length === 0) throw new ScheduleParseError("noShifts");
-  return shifts;
+  if (shifts.length === 0 && absenceDays === 0) throw new ScheduleParseError("noShifts");
+  return { shifts, absenceDays };
 }
 
 /** Read an uploaded schedule file (.csv or .xlsx) into shifts. */
-export async function parseScheduleFile(file: File): Promise<Shift[]> {
+export async function parseScheduleFile(file: File): Promise<ParsedSchedule> {
   const isCsv = /\.csv$/i.test(file.name);
   if (isCsv) {
     return rowsToShifts(parseCsvText(await file.text()));

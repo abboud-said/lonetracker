@@ -133,6 +133,14 @@ const dict = {
     en: "The OB rules already follow Detaljhandelsavtalet. You only need this if you have local additions, such as Coop's extra morning OB.",
   },
 
+  semesterDays: { sv: "semesterdagar", en: "vacation days" },
+  perDay: { sv: "kr/dag", en: "kr/day" },
+  semesterPay: { sv: "Semesterlön", en: "Vacation pay" },
+  semesterHint: {
+    sv: "Semesterdagar betalas inte per timme, så de räknas inte som pass. Fyll i din semesterlön per dag från lönebeskedet (\"Semesterlön betald ... a\") för att få med dem.",
+    en: "Vacation days are not paid by the hour, so they do not count as shifts. Enter your vacation pay per day from a payslip to include them.",
+  },
+
   language: { sv: "Språk", en: "Language" },
 } as const;
 

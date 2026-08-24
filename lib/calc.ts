@@ -30,6 +30,9 @@ export type ShiftResult = {
 
 export type Totals = {
   shifts: number;
+  /** Days on leave, paid as semesterlön rather than by the hour. */
+  absenceDays: number;
+  semesterPay: number;
   paidMinutes: number;
   perTier: TierMinutes;
   baseAmount: number;
@@ -144,7 +147,11 @@ export function computeShift(shift: Shift, ruleSet: RuleSet, settings: Settings)
   };
 }
 
-export function computeTotals(results: ShiftResult[], settings: Settings): Totals {
+export function computeTotals(
+  results: ShiftResult[],
+  settings: Settings,
+  absenceDays = 0,
+): Totals {
   const perTier: TierMinutes = {};
   const tierAmounts: Record<string, number> = {};
   let paidMinutes = 0;
@@ -163,10 +170,17 @@ export function computeTotals(results: ShiftResult[], settings: Settings): Total
     }
   }
 
+  // Semesterlön is its own line on the payslip and carries no OB, but it is
+  // taxed with everything else, so it joins the gross before tax is taken.
+  const semesterPay = absenceDays * (settings.semesterPayPerDay || 0);
+  gross += semesterPay;
+
   const tax = gross * (settings.taxRate / 100);
 
   return {
     shifts: results.length,
+    absenceDays,
+    semesterPay,
     paidMinutes,
     perTier,
     baseAmount,

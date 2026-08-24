@@ -19,20 +19,27 @@ export function Tracker() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const { settings, ruleSet, shifts, fileName, language: lang } = state;
+  const { settings, ruleSet, shifts, absenceDays, fileName, language: lang } = state;
 
   const results = useMemo(
     () => shifts.map((shift) => computeShift(shift, ruleSet, settings)),
     [shifts, ruleSet, settings],
   );
-  const totals = useMemo(() => computeTotals(results, settings), [results, settings]);
+  const totals = useMemo(
+    () => computeTotals(results, settings, absenceDays),
+    [results, settings, absenceDays],
+  );
 
   const patch = (next: Partial<AppState>) => setAppState((prev) => ({ ...prev, ...next }));
 
   async function handleFile(file: File) {
     try {
       const parsed = await parseScheduleFile(file);
-      patch({ shifts: parsed, fileName: file.name });
+      patch({
+        shifts: parsed.shifts,
+        absenceDays: parsed.absenceDays,
+        fileName: file.name,
+      });
       setErrorKey(null);
     } catch (err) {
       setErrorKey(parseErrorKey(err instanceof ScheduleParseError ? err.code : "unknown"));
@@ -61,7 +68,7 @@ export function Tracker() {
               <Button
                 variant="quiet"
                 onClick={() => {
-                  patch({ shifts: [], fileName: null });
+                  patch({ shifts: [], absenceDays: 0, fileName: null });
                   setErrorKey(null);
                 }}
               >
@@ -124,6 +131,7 @@ export function Tracker() {
         settings={settings}
         lang={lang}
         hasShifts={shifts.length > 0}
+        onSemesterPayChange={(v) => patch({ settings: { ...settings, semesterPayPerDay: v } })}
       />
 
       <ShiftList results={results} ruleSet={ruleSet} lang={lang} />

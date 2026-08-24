@@ -7,15 +7,17 @@ export type AppState = {
   settings: Settings;
   ruleSet: RuleSet;
   shifts: Shift[];
+  absenceDays: number;
   fileName: string | null;
   language: Language;
 };
 
 export function defaultState(): AppState {
   return {
-    settings: { baseRate: 177.44, taxRate: 30, breakIsPaid: false },
+    settings: { baseRate: 177.44, taxRate: 30, breakIsPaid: false, semesterPayPerDay: 0 },
     ruleSet: detaljhandelPreset(),
     shifts: [],
+    absenceDays: 0,
     fileName: null,
     language: "sv",
   };
@@ -38,9 +40,11 @@ export function loadState(): AppState {
         baseRate: numberOr(parsed.settings?.baseRate, fallback.settings.baseRate),
         taxRate: numberOr(parsed.settings?.taxRate, fallback.settings.taxRate),
         breakIsPaid: parsed.settings?.breakIsPaid === true,
+        semesterPayPerDay: numberOr(parsed.settings?.semesterPayPerDay, 0),
       },
       ruleSet: isRuleSet(parsed.ruleSet) ? parsed.ruleSet : fallback.ruleSet,
       shifts: Array.isArray(parsed.shifts) ? parsed.shifts.filter(isShift) : [],
+      absenceDays: numberOr(parsed.absenceDays, 0),
       fileName: typeof parsed.fileName === "string" ? parsed.fileName : null,
       language: parsed.language === "en" || parsed.language === "sv" ? parsed.language : fallback.language,
     };
