@@ -118,6 +118,13 @@ const dict = {
     en: "Upload a schedule to see your pay.",
   },
 
+  showAdvanced: { sv: "Visa avancerat", en: "Show advanced" },
+  hideAdvanced: { sv: "Dölj avancerat", en: "Hide advanced" },
+  advancedHint: {
+    sv: "OB-reglerna är redan inställda enligt Detaljhandelsavtalet. Du behöver bara ändra här om du har lokala tillägg, till exempel Coops extra OB på morgonen.",
+    en: "The OB rules already follow Detaljhandelsavtalet. You only need this if you have local additions, such as Coop's extra morning OB.",
+  },
+
   language: { sv: "Språk", en: "Language" },
 } as const;
 

@@ -16,6 +16,7 @@ import { Button, Field, Section, TextInput } from "./ui";
 export function Tracker() {
   const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [errorKey, setErrorKey] = useState<MessageKey | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const { settings, ruleSet, shifts, fileName, language: lang } = state;
@@ -115,20 +116,6 @@ export function Tracker() {
           </Field>
         </div>
 
-        <label className="flex items-start gap-2.5 mt-5 cursor-pointer max-w-prose">
-          <input
-            type="checkbox"
-            checked={settings.breakIsPaid}
-            onChange={(e) =>
-              patch({ settings: { ...settings, breakIsPaid: e.target.checked } })
-            }
-            className="mt-0.5 accent-accent cursor-pointer"
-          />
-          <span>
-            <span className="text-sm font-medium">{t("breakPaid", lang)}</span>
-            <span className="block text-xs text-muted mt-0.5">{t("breakPaidHint", lang)}</span>
-          </span>
-        </label>
       </Section>
 
       <Summary
@@ -141,11 +128,45 @@ export function Tracker() {
 
       <ShiftList results={results} ruleSet={ruleSet} lang={lang} />
 
-      <RuleEditor
-        ruleSet={ruleSet}
-        lang={lang}
-        onChange={(next: RuleSet) => patch({ ruleSet: next })}
-      />
+      {/* Everything below is correct out of the box for anyone on
+          Detaljhandelsavtalet, so it stays folded away by default. */}
+      <div className="flex flex-col gap-5">
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((v) => !v)}
+          aria-expanded={showAdvanced}
+          className="self-center text-sm text-muted hover:text-foreground underline underline-offset-4 cursor-pointer"
+        >
+          {showAdvanced ? t("hideAdvanced", lang) : t("showAdvanced", lang)}
+        </button>
+
+        {showAdvanced ? (
+          <>
+            <Section title={t("breakLabel", lang)} hint={t("advancedHint", lang)}>
+          <label className="flex items-start gap-2.5 mt-5 cursor-pointer max-w-prose">
+            <input
+              type="checkbox"
+              checked={settings.breakIsPaid}
+              onChange={(e) =>
+                patch({ settings: { ...settings, breakIsPaid: e.target.checked } })
+              }
+              className="mt-0.5 accent-accent cursor-pointer"
+            />
+            <span>
+              <span className="text-sm font-medium">{t("breakPaid", lang)}</span>
+              <span className="block text-xs text-muted mt-0.5">{t("breakPaidHint", lang)}</span>
+            </span>
+          </label>
+            </Section>
+
+            <RuleEditor
+              ruleSet={ruleSet}
+              lang={lang}
+              onChange={(next: RuleSet) => patch({ ruleSet: next })}
+            />
+          </>
+        ) : null}
+      </div>
 
       <p className="text-xs text-muted text-center max-w-prose mx-auto mt-2">
         {t("privacy", lang)}

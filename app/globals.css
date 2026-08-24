@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 :root {
+  /* Always light. Salary is stressful enough to read without a dark theme
+     making the numbers harder to scan. */
+  color-scheme: light;
+
   --background: #fbfaf9;
   --surface: #ffffff;
   --border: #e3e0dc;
@@ -9,19 +13,6 @@
   --accent: #1f6f5c;
   --accent-soft: #e8f2ef;
   --danger: #a8321c;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #121110;
-    --surface: #1b1a18;
-    --border: #302e2b;
-    --foreground: #eeebe7;
-    --muted: #9b958d;
-    --accent: #6cc2a8;
-    --accent-soft: #1d2b27;
-    --danger: #e0755c;
-  }
 }
 
 @theme inline {
