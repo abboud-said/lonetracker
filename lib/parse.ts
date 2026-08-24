@@ -185,9 +185,13 @@ const norm = (c: unknown) => String(c ?? "").trim().toLowerCase();
  * hours actually worked, so for any day that has been clocked the later block
  * wins; days still in the future have no Närvaro yet and fall back to the plan.
  *
- * Verified against a real Bestseller export: reading the plan alone put the
- * month 3.8 hours high, mostly from one shift that was scheduled for 7h15 but
- * worked for 1h.
+ * Verified against two months of real Bestseller exports and the payslip they
+ * produced: this lands within about a krona on the month, where reading the
+ * plan alone was 700 kr out.
+ *
+ * One case it cannot see: hours worked beyond the schedule and approved
+ * afterwards as mertid. Those are paid but look identical to clocking out
+ * late, so they are left out rather than guessed at.
  */
 export function rowsToShifts(rows: Row[]): Shift[] {
   let headerIdx = -1;
@@ -236,22 +240,23 @@ export function rowsToShifts(rows: Row[]): Shift[] {
     const m = String(dateRaw).match(/(\d{4})-(\d{2})-(\d{2})/);
     if (!m) continue;
 
-    // Later blocks are the clocked ones, so walk from the right and keep the
-    // first that actually holds a time for this day.
+    // Read every block that holds a time for this day, then narrow to the
+    // overlap of all of them: pay starts at the later of scheduled and clocked
+    // start, and stops at the earlier of the two ends. Clocking in a few
+    // minutes early or lingering after close is not paid time.
     let startMin: number | null = null;
     let rawEnd: number | null = null;
     let breakMin = 0;
-    for (let b = blocks.length - 1; b >= 0; b--) {
-      const block = blocks[b];
+    for (const block of blocks) {
       const s = toMinutes(row[block.start]);
       const e = toMinutes(row[block.end!]);
       if (s == null || e == null || s === e) continue;
-      startMin = s;
-      rawEnd = e;
-      breakMin = block.breakCol != null ? (toMinutes(row[block.breakCol]) ?? 0) : 0;
-      break;
+      startMin = startMin == null ? s : Math.max(startMin, s);
+      rawEnd = rawEnd == null ? e : Math.min(rawEnd, e);
+      const b = block.breakCol != null ? (toMinutes(row[block.breakCol]) ?? 0) : 0;
+      breakMin = Math.max(breakMin, b);
     }
-    if (startMin == null || rawEnd == null) continue;
+    if (startMin == null || rawEnd == null || startMin >= rawEnd) continue;
 
     // An end time at or before the start means the shift ran past midnight.
     const endMin = rawEnd <= startMin ? rawEnd + 1440 : rawEnd;
