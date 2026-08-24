@@ -76,19 +76,36 @@ export function splitShift(shift: Shift, ruleSet: RuleSet): TierMinutes {
 
 export function computeShift(shift: Shift, ruleSet: RuleSet, settings: Settings): ShiftResult {
   const raw = splitShift(shift, ruleSet);
-  const rawTotal = Object.values(raw).reduce((a, b) => a + b, 0);
   const breakMinutes = Math.max(0, shift.breakMin || 0);
 
   // A rast is unpaid and falls outside working time (Detaljhandelsavtalet
   // §6.1); a måltidsuppehåll or paus counts as working time and is not
-  // deducted at all. When it is deducted, it is spread proportionally over the
-  // tiers rather than taken off the end, since the schedule rarely says when
-  // the break fell — this stops it from silently eating the best-paid hours.
-  const deducted = settings.breakIsPaid ? 0 : breakMinutes;
-  const factor = rawTotal > 0 ? Math.max(0, rawTotal - deducted) / rawTotal : 1;
+  // deducted at all.
+  //
+  // It comes off the base hours first, leaving the OB windows whole. Checked
+  // against a real Bestseller payroll export: a Wednesday 10:00-19:00 shift
+  // with a one-hour break was paid 45 minutes of OB 50%, the full 18.15-19.00
+  // window, not the 40 minutes a proportional split would give. Breaks are
+  // taken during the quiet part of a shift, not during the evening.
+  let remaining = settings.breakIsPaid ? 0 : breakMinutes;
+  const perTier: TierMinutes = { ...raw };
 
-  const perTier: TierMinutes = {};
-  for (const [key, minutes] of Object.entries(raw)) perTier[key] = minutes * factor;
+  const fromBase = Math.min(remaining, perTier[BASE_KEY] ?? 0);
+  perTier[BASE_KEY] = (perTier[BASE_KEY] ?? 0) - fromBase;
+  remaining -= fromBase;
+
+  // Only a break longer than the whole base portion reaches the supplements,
+  // and then the cheapest tier gives way first.
+  if (remaining > 0) {
+    const byRate = ruleSet.tiers.slice().sort((a, b) => a.percent - b.percent);
+    for (const tier of byRate) {
+      if (remaining <= 0) break;
+      const take = Math.min(remaining, perTier[tier.id] ?? 0);
+      perTier[tier.id] = (perTier[tier.id] ?? 0) - take;
+      remaining -= take;
+    }
+  }
+
   const paidMinutes = Object.values(perTier).reduce((a, b) => a + b, 0);
 
   const baseAmount = (paidMinutes / 60) * settings.baseRate;

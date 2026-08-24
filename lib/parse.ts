@@ -180,9 +180,14 @@ const norm = (c: unknown) => String(c ?? "").trim().toLowerCase();
 /**
  * Turn raw spreadsheet rows into shifts.
  *
- * Some exports carry two schedule blocks side by side — a planned schedule and
- * an actual clock-in ("Närvaro"). Each Start is paired with the nearest Slut to
- * its right, and only the leftmost block is read, so the planned schedule wins.
+ * Some exports carry two blocks of times side by side — the planned schedule
+ * ("Aktivt schema") and what was actually clocked ("Närvaro"). Pay follows the
+ * hours actually worked, so for any day that has been clocked the later block
+ * wins; days still in the future have no Närvaro yet and fall back to the plan.
+ *
+ * Verified against a real Bestseller export: reading the plan alone put the
+ * month 3.8 hours high, mostly from one shift that was scheduled for 7h15 but
+ * worked for 1h.
  */
 export function rowsToShifts(rows: Row[]): Shift[] {
   let headerIdx = -1;
@@ -222,7 +227,6 @@ export function rowsToShifts(rows: Row[]): Shift[] {
     .sort((a, b) => a.start - b.start);
 
   if (blocks.length === 0) throw new ScheduleParseError("noTimes");
-  const block = blocks[0];
 
   const shifts: Shift[] = [];
   for (let i = headerIdx + 1; i < rows.length; i++) {
@@ -232,13 +236,25 @@ export function rowsToShifts(rows: Row[]): Shift[] {
     const m = String(dateRaw).match(/(\d{4})-(\d{2})-(\d{2})/);
     if (!m) continue;
 
-    const startMin = toMinutes(row[block.start]);
-    const rawEnd = toMinutes(row[block.end!]);
-    if (startMin == null || rawEnd == null || startMin === rawEnd) continue;
+    // Later blocks are the clocked ones, so walk from the right and keep the
+    // first that actually holds a time for this day.
+    let startMin: number | null = null;
+    let rawEnd: number | null = null;
+    let breakMin = 0;
+    for (let b = blocks.length - 1; b >= 0; b--) {
+      const block = blocks[b];
+      const s = toMinutes(row[block.start]);
+      const e = toMinutes(row[block.end!]);
+      if (s == null || e == null || s === e) continue;
+      startMin = s;
+      rawEnd = e;
+      breakMin = block.breakCol != null ? (toMinutes(row[block.breakCol]) ?? 0) : 0;
+      break;
+    }
+    if (startMin == null || rawEnd == null) continue;
 
     // An end time at or before the start means the shift ran past midnight.
     const endMin = rawEnd <= startMin ? rawEnd + 1440 : rawEnd;
-    const breakMin = block.breakCol != null ? (toMinutes(row[block.breakCol]) ?? 0) : 0;
 
     shifts.push({ id: newId(), date: m[0], startMin, endMin, breakMin });
   }
