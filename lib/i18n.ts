@@ -132,8 +132,8 @@ const dict = {
     en: "Enter your hourly rate. It is on your payslip, on the \"Timlön\" line.",
   },
   step2: {
-    sv: "Fyll i din skatteprocent. Ta den från ett lönebesked: skatteavdrag delat med bruttolön, gånger 100. Den är personlig — 30 % som står här från början stämmer sällan.",
-    en: "Enter your tax percentage. Take it from a payslip: tax deducted divided by gross, times 100. It is personal — the 30 % filled in here to begin with is rarely right.",
+    sv: "Fyll i din skatteprocent. Ta fram ett gammalt lönebesked och leta upp två rader: \"Bruttolön\" och \"Preliminär skatt\". Dela skatten med bruttolönen och gånga med 100. Exempel: 4 630 ÷ 26 168 × 100 = 17,7 %. Skatten är personlig — 30 % som står här från början stämmer nästan aldrig.",
+    en: "Enter your tax percentage. Take an old payslip and find two lines: \"Bruttolön\" (gross) and \"Preliminär skatt\" (tax). Divide the tax by the gross and multiply by 100. Example: 4 630 ÷ 26 168 × 100 = 17.7 %. Tax is personal — the 30 % filled in here to begin with is almost never right.",
   },
   step3: {
     sv: "Ladda upp ditt schema. Det är filen \"Attestera tid\" som du laddar ner från schemasystemet (.xlsx eller .csv).",
@@ -144,8 +144,8 @@ const dict = {
     en: "Gross pay is the figure to check against your payslip. Net pay is an estimate, since real tax follows a skattetabell.",
   },
   taxHelp: {
-    sv: "skatteavdrag ÷ bruttolön × 100",
-    en: "tax deducted ÷ gross × 100",
+    sv: "Från lönebeskedet: Preliminär skatt ÷ Bruttolön × 100",
+    en: "From a payslip: tax deducted ÷ gross pay × 100",
   },
 
   showAdvanced: { sv: "Visa avancerat", en: "Show advanced" },
