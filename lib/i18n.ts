@@ -97,6 +97,14 @@ const dict = {
   gross: { sv: "Bruttolön", en: "Gross pay" },
   tax: { sv: "Skatt", en: "Tax" },
   net: { sv: "Nettolön", en: "Net pay" },
+  netPayout: {
+    sv: "Detta betalas ut till dig",
+    en: "This is what reaches your account",
+  },
+  taxEstimate: {
+    sv: "Skatten är en uppskattning. Riktig skatt räknas efter skattetabell, inte en fast procent. Ta din verkliga skatteprocent från lönebeskedet (skatteavdrag delat med bruttolön) för en exakt siffra.",
+    en: "Tax is an estimate. Real tax follows a skattetabell, not a flat percentage. Take your actual rate from a payslip (tax deducted divided by gross) for an exact figure.",
+  },
   shifts: { sv: "Pass", en: "Shifts" },
   breakLabel: { sv: "Rast", en: "Break" },
   breakPaid: { sv: "Rasten är betald", en: "Break is paid" },

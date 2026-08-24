@@ -61,8 +61,19 @@ export function Summary({
           value={`− ${money(totals.tax, lang)}`}
           muted
         />
-        <Stat label={t("net", lang)} value={money(totals.net, lang)} strong />
       </div>
+
+      {/* Net is the figure people actually came for, so it gets its own block
+          rather than being one more row in the list. */}
+      <div className="mt-4 rounded-lg bg-accent-soft px-4 py-3.5">
+        <div className="flex items-baseline justify-between gap-4">
+          <span className="text-sm font-semibold">{t("net", lang)}</span>
+          <span className="tabular text-2xl font-semibold">{money(totals.net, lang)}</span>
+        </div>
+        <p className="text-xs text-muted mt-0.5">{t("netPayout", lang)}</p>
+      </div>
+
+      <p className="text-xs text-muted mt-3 max-w-prose">{t("taxEstimate", lang)}</p>
     </Section>
   );
 }
