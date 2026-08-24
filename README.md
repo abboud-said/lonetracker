@@ -17,8 +17,8 @@ store staff, which is most of Swedish retail.
 
 ## What it does
 
-- Reads a schedule from `.csv` or `.xlsx` (columns `Datum`/`Date`,
-  `Start`, `Slut`/`End`, with an optional `Rast`/`Break`)
+- Reads a schedule three ways — a `.csv`/`.xlsx` export, text pasted from a PDF
+  or email, or shifts typed in by hand
 - Splits every shift across OB tiers by day type and time of day
 - Handles shifts running past midnight, applying the *next* day's rules to the
   hours after 00:00
@@ -27,6 +27,24 @@ store staff, which is most of Swedish retail.
   breakdown you can expand
 - Swedish and English, switchable
 - Installable as a PWA; everything is stored in the browser's local storage
+
+## Getting a schedule in
+
+Every employer runs a different scheduling system, and a parser can only be
+written for a format someone has actually seen. So there are three routes in,
+and the last one always works:
+
+- **A file.** `.csv` or `.xlsx`. Columns are found by their headings, in
+  Swedish or English. If the headings are unfamiliar the file is not rejected —
+  the columns are listed with sample values and you point out which is the
+  date, the start and the end.
+- **Pasted text.** Copy from a PDF, an email or a web roster. Any line with a
+  date and two clock times becomes a shift; a third short time is read as a
+  break. Dates are parsed strictly, since guessing day-versus-month would move
+  a whole month onto the wrong weekdays, and weekday is what decides OB.
+- **By hand.** Date, start, end, break. Tedious for a month, but it needs
+  nothing from the employer at all — it works for someone whose schedule only
+  exists on paper.
 
 ## The OB rules
 

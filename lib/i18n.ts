@@ -148,6 +148,39 @@ const dict = {
     en: "From a payslip: tax deducted ÷ gross pay × 100",
   },
 
+  addManually: { sv: "Skriv in pass för hand", en: "Enter shifts by hand" },
+  pasteInstead: { sv: "Klistra in text", en: "Paste text" },
+  pasted: { sv: "Inklistrat schema", en: "Pasted schedule" },
+  dateLabel: { sv: "Datum", en: "Date" },
+  addShift: { sv: "Lägg till pass", en: "Add shift" },
+  manualHint: {
+    sv: "Fungerar oavsett var du jobbar. Datumet blir kvar när du lagt till ett pass, så du kan skriva in en hel vecka i rad.",
+    en: "Works wherever you work. The date stays after adding a shift, so a whole week can be entered in a row.",
+  },
+  manualInvalid: {
+    sv: "Kontrollera datum och tider. Tider skrivs som 17:00.",
+    en: "Check the date and times. Times are written as 17:00.",
+  },
+  pasteHint: {
+    sv: "Kopiera schemat från en PDF, ett mejl eller en webbsida och klistra in det här. Varje rad behöver ett datum och två klockslag. En tredje tid tolkas som rast.",
+    en: "Copy your schedule from a PDF, an email or a web page and paste it here. Each line needs a date and two clock times. A third time is read as a break.",
+  },
+  readText: { sv: "Läs in texten", en: "Read the text" },
+  pasteFailed: {
+    sv: "Hittade inga pass. Varje rad behöver ett datum och två tider.",
+    en: "No shifts found. Each line needs a date and two times.",
+  },
+  mapTitle: { sv: "Vilka kolumner är vad?", en: "Which columns are which?" },
+  mapHint: {
+    sv: "Filen lästes in, men kolumnrubrikerna känns inte igen. Peka ut vilka kolumner som är datum, start och slut så räknar appen ut resten.",
+    en: "The file was read, but the column headings are unfamiliar. Point out which columns hold the date, start and end and the app takes it from there.",
+  },
+  useColumns: { sv: "Använd de här", en: "Use these" },
+  cancel: { sv: "Avbryt", en: "Cancel" },
+  noBreakColumn: { sv: "Ingen rastkolumn", en: "No break column" },
+  removeShift: { sv: "Ta bort pass", en: "Remove shift" },
+  addedByHandLabel: { sv: "Egna pass", en: "Own shifts" },
+
   showAdvanced: { sv: "Visa avancerat", en: "Show advanced" },
   hideAdvanced: { sv: "Dölj avancerat", en: "Hide advanced" },
   advancedHint: {

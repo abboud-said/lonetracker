@@ -226,6 +226,57 @@ export type ParsedSchedule = {
   leave: LeaveDays;
 };
 
+/** Columns named by hand, when the headers are ones we do not recognise. */
+export type ColumnMapping = {
+  date: number;
+  start: number;
+  end: number;
+  break?: number;
+};
+
+/**
+ * Read shifts using columns the user pointed at, skipping header detection
+ * entirely. Any row whose date column does not parse is passed over, which
+ * takes care of headers, blank rows and totals without needing to find them.
+ */
+export function rowsToShiftsWithMapping(rows: Row[], mapping: ColumnMapping): ParsedSchedule {
+  const shifts: Shift[] = [];
+
+  for (const row of rows) {
+    const m = String(row[mapping.date] ?? "").match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) continue;
+
+    const startMin = toMinutes(row[mapping.start]);
+    const rawEnd = toMinutes(row[mapping.end]);
+    if (startMin == null || rawEnd == null || startMin === rawEnd) continue;
+
+    const endMin = rawEnd <= startMin ? rawEnd + 1440 : rawEnd;
+    const breakMin = mapping.break != null ? (toMinutes(row[mapping.break]) ?? 0) : 0;
+    shifts.push({ id: newId(), date: m[0], startMin, endMin, breakMin });
+  }
+
+  shifts.sort((a, b) => a.date.localeCompare(b.date) || a.startMin - b.startMin);
+  if (shifts.length === 0) throw new ScheduleParseError("noShifts");
+  return { shifts, leave: NO_LEAVE() };
+}
+
+/** Everything a column-picker needs to show: a name, and what is actually in it. */
+export type ColumnPreview = { index: number; header: string; samples: string[] };
+
+export function previewColumns(rows: Row[]): ColumnPreview[] {
+  const width = rows.reduce((max, r) => Math.max(max, r.length), 0);
+  const out: ColumnPreview[] = [];
+
+  for (let i = 0; i < width; i++) {
+    const values = rows.map((r) => String(r[i] ?? "").trim()).filter((v) => v !== "");
+    if (values.length === 0) continue;
+    // The first value is usually the header; the rest show what the column holds.
+    out.push({ index: i, header: values[0], samples: values.slice(1, 4) });
+  }
+
+  return out;
+}
+
 export function rowsToShifts(rows: Row[]): ParsedSchedule {
   let headerIdx = -1;
   let dateCol = -1;
@@ -341,6 +392,73 @@ export function rowsToShifts(rows: Row[]): ParsedSchedule {
     list.sort((a, b) => a.date.localeCompare(b.date));
   }
   return { shifts, leave };
+}
+
+const TIME_RE = /\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/g;
+const DATE_PATTERNS: { re: RegExp; order: "ymd" | "dmy" }[] = [
+  { re: /\b(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})\b/, order: "ymd" },
+  { re: /\b(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})\b/, order: "dmy" },
+];
+
+/**
+ * Pull shifts out of whatever text someone pasted in — copied from a PDF, a
+ * web roster, an email. Works line by line: a line needs a date and at least
+ * two clock times to become a shift.
+ *
+ * Deliberately strict about dates, since a wrong guess about day-versus-month
+ * would quietly shift someone's whole month onto the wrong weekdays, and
+ * weekday is what decides OB.
+ */
+export function parseFreeText(text: string): Shift[] {
+  const shifts: Shift[] = [];
+
+  for (const rawLine of text.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    let date: string | null = null;
+    for (const { re, order } of DATE_PATTERNS) {
+      const m = line.match(re);
+      if (!m) continue;
+      const [y, mo, d] =
+        order === "ymd"
+          ? [m[1], m[2], m[3]]
+          : [m[3], m[2], m[1]];
+      const month = Number(mo);
+      const day = Number(d);
+      if (month < 1 || month > 12 || day < 1 || day > 31) continue;
+      date = `${y}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      break;
+    }
+    if (!date) continue;
+
+    // Strip the date before hunting for times, or "2026-08-03" donates digits.
+    const withoutDate = line.replace(/\b\d{4}[-/.]\d{1,2}[-/.]\d{1,2}\b/, " ")
+                            .replace(/\b\d{1,2}[-/.]\d{1,2}[-/.]\d{4}\b/, " ");
+    const times = Array.from(withoutDate.matchAll(TIME_RE)).map(
+      (m) => Number(m[1]) * 60 + Number(m[2]),
+    );
+    if (times.length < 2) continue;
+
+    const [startMin, first] = times;
+    const endMin = first <= startMin ? first + 1440 : first;
+
+    // A third time is only a break if it is short enough to be one.
+    const third = times[2];
+    const breakMin = third != null && third > 0 && third <= 180 ? third : 0;
+
+    shifts.push({ id: newId(), date, startMin, endMin, breakMin });
+  }
+
+  shifts.sort((a, b) => a.date.localeCompare(b.date) || a.startMin - b.startMin);
+  if (shifts.length === 0) throw new ScheduleParseError("noShifts");
+  return shifts;
+}
+
+/** Read a file into raw rows, so the columns can be re-read with a mapping. */
+export async function readScheduleRows(file: File): Promise<Row[]> {
+  if (/\.csv$/i.test(file.name)) return parseCsvText(await file.text());
+  return readXlsxRows(await file.arrayBuffer());
 }
 
 /** Read an uploaded schedule file (.csv or .xlsx) into shifts. */

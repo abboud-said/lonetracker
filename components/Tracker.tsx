@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { computeShift, computeTotals } from "@/lib/calc";
-import { parseErrorKey, t, type MessageKey } from "@/lib/i18n";
-import { NO_LEAVE, parseScheduleFile, ScheduleParseError } from "@/lib/parse";
+import { t } from "@/lib/i18n";
+import { NO_LEAVE } from "@/lib/parse";
 import { getServerSnapshot, getSnapshot, setAppState, subscribe } from "@/lib/store";
 import type { AppState } from "@/lib/storage";
 import { parseNumber } from "@/lib/time";
@@ -11,13 +11,12 @@ import type { Language, RuleSet } from "@/lib/types";
 import { RuleEditor } from "./RuleEditor";
 import { ShiftList } from "./ShiftList";
 import { Summary } from "./Summary";
-import { Button, Field, Section, TextInput } from "./ui";
+import { ScheduleInput } from "./ScheduleInput";
+import { Field, Section, TextInput } from "./ui";
 
 export function Tracker() {
   const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  const [errorKey, setErrorKey] = useState<MessageKey | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const fileInput = useRef<HTMLInputElement>(null);
 
   const { settings, ruleSet, shifts, leave, fileName, language: lang } = state;
 
@@ -31,16 +30,6 @@ export function Tracker() {
   );
 
   const patch = (next: Partial<AppState>) => setAppState((prev) => ({ ...prev, ...next }));
-
-  async function handleFile(file: File) {
-    try {
-      const parsed = await parseScheduleFile(file);
-      patch({ shifts: parsed.shifts, leave: parsed.leave, fileName: file.name });
-      setErrorKey(null);
-    } catch (err) {
-      setErrorKey(parseErrorKey(err instanceof ScheduleParseError ? err.code : "unknown"));
-    }
-  }
 
   return (
     <main className="w-full max-w-3xl mx-auto px-4 py-10 sm:py-14 flex flex-col gap-5">
@@ -74,52 +63,23 @@ export function Tracker() {
         </section>
       ) : null}
 
-      <Section
-        title={t("schedule", lang)}
-        hint={t("uploadHint", lang)}
-        actions={
-          <>
-            <Button variant="primary" onClick={() => fileInput.current?.click()}>
-              {shifts.length > 0 ? t("replaceFile", lang) : t("chooseFile", lang)}
-            </Button>
-            {shifts.length > 0 ? (
-              <Button
-                variant="quiet"
-                onClick={() => {
-                  patch({ shifts: [], leave: NO_LEAVE(), fileName: null });
-                  setErrorKey(null);
-                }}
-              >
-                {t("clearSchedule", lang)}
-              </Button>
-            ) : null}
-          </>
+      <ScheduleInput
+        lang={lang}
+        shiftCount={shifts.length}
+        fileName={fileName}
+        onLoaded={(parsed, name) =>
+          patch({ shifts: parsed.shifts, leave: parsed.leave, fileName: name })
         }
-      >
-        <input
-          ref={fileInput}
-          type="file"
-          accept=".csv,.xlsx"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) void handleFile(file);
-            // Reset so picking the same file again still fires a change event.
-            e.target.value = "";
-          }}
-        />
-
-        {errorKey ? (
-          <p className="text-sm text-danger">{t(errorKey, lang)}</p>
-        ) : shifts.length > 0 ? (
-          <p className="text-sm text-muted">
-            <span className="font-medium text-foreground">{fileName}</span> — {shifts.length}{" "}
-            {t(shifts.length === 1 ? "shiftsLoadedOne" : "shiftsLoadedMany", lang)}
-          </p>
-        ) : (
-          <p className="text-sm text-muted">{t("noSchedule", lang)}</p>
-        )}
-      </Section>
+        onAddShift={(shift) =>
+          patch({
+            shifts: [...shifts, shift].sort(
+              (a, b) => a.date.localeCompare(b.date) || a.startMin - b.startMin,
+            ),
+            fileName: fileName ?? t("addedByHandLabel", lang),
+          })
+        }
+        onClear={() => patch({ shifts: [], leave: NO_LEAVE(), fileName: null })}
+      />
 
       <Section title={t("pay", lang)}>
         <div className="flex flex-wrap gap-6">
@@ -152,11 +112,16 @@ export function Tracker() {
         settings={settings}
         lang={lang}
         hasShifts={shifts.length > 0}
-        onSemesterPayChange={(v) => patch({ settings: { ...settings, semesterPayPerDay: v } })}
-        onWeeklyHoursChange={(v) => patch({ settings: { ...settings, weeklyHours: v } })}
+        onSemesterPayChange={(v: number) => patch({ settings: { ...settings, semesterPayPerDay: v } })}
+        onWeeklyHoursChange={(v: number) => patch({ settings: { ...settings, weeklyHours: v } })}
       />
 
-      <ShiftList results={results} ruleSet={ruleSet} lang={lang} />
+      <ShiftList
+        results={results}
+        ruleSet={ruleSet}
+        lang={lang}
+        onRemove={(id) => patch({ shifts: shifts.filter((s) => s.id !== id) })}
+      />
 
       {/* Everything below is correct out of the box for anyone on
           Detaljhandelsavtalet, so it stays folded away by default. */}

@@ -11,10 +11,12 @@ export function ShiftList({
   results,
   ruleSet,
   lang,
+  onRemove,
 }: {
   results: ShiftResult[];
   ruleSet: RuleSet;
   lang: Language;
+  onRemove: (id: string) => void;
 }) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -58,6 +60,13 @@ export function ShiftList({
 
               {open ? (
                 <div className="pb-3 pl-1 flex flex-col gap-1 text-sm text-muted">
+                  <button
+                    type="button"
+                    onClick={() => onRemove(r.shift.id)}
+                    className="self-start text-xs text-danger underline underline-offset-4 cursor-pointer mb-1"
+                  >
+                    {t("removeShift", lang)}
+                  </button>
                   {baseMinutes > 0.4 ? (
                     <Row label={t("basePay", lang)} value={hours(baseMinutes, lang)} />
                   ) : null}
