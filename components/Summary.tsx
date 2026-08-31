@@ -2,12 +2,9 @@
 
 import type { Totals } from "@/lib/calc";
 import { t } from "@/lib/i18n";
-import { hours, money, monthLabel } from "@/lib/time";
+import { ALL_MONTHS, hours, money, monthLabel } from "@/lib/time";
 import type { Language, RuleSet, Settings } from "@/lib/types";
 import { NumberInput, Section, Stat } from "./ui";
-
-/** Sentinel for "do not narrow to a month at all". */
-export const ALL_MONTHS = "all";
 
 /**
  * Only offered once a schedule actually spans more than one month — with a

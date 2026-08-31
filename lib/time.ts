@@ -118,6 +118,9 @@ const MONTHS_LONG: Record<Language, string[]> = {
   ],
 };
 
+/** The month picker's value for "do not narrow to a month at all". */
+export const ALL_MONTHS = "all";
+
 /** The distinct YYYY-MM present in a set of dates, oldest first. */
 export function monthsOf(dates: string[]): string[] {
   return [...new Set(dates.map((d) => d.slice(0, 7)))].sort();
