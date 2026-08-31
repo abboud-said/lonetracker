@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { computeShift, computeTotals } from "@/lib/calc";
 import { t } from "@/lib/i18n";
 import { NO_LEAVE } from "@/lib/parse";
@@ -52,6 +52,13 @@ export function Tracker() {
     () => computeTotals(results, settings, leave, ruleSet, month),
     [results, settings, leave, ruleSet, month],
   );
+
+  // The document opens as Swedish and the language is a client-side choice, so
+  // the attribute has to follow it here. Without this a screen reader keeps
+  // reading English text with Swedish pronunciation.
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   const patch = (next: Partial<AppState>) => setAppState((prev) => ({ ...prev, ...next }));
 

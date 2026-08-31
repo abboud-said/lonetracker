@@ -260,6 +260,20 @@ export function rowsToShiftsWithMapping(rows: Row[], mapping: ColumnMapping): Pa
   return { shifts, leave: NO_LEAVE() };
 }
 
+/**
+ * Whether the file holds any date the mapper could actually be pointed at.
+ *
+ * Unrecognised headers are recoverable and worth asking about; a file with no
+ * dates in it is not a schedule, and offering a column picker for it hands
+ * someone who picked the wrong file a puzzle instead of an answer. Only the
+ * ISO form counts, because that is the only form the mapper can read back.
+ */
+export function hasAnyDate(rows: Row[]): boolean {
+  return rows.some((row) =>
+    row.some((cell) => cell != null && /\d{4}-\d{2}-\d{2}/.test(String(cell))),
+  );
+}
+
 /** Everything a column-picker needs to show: a name, and what is actually in it. */
 export type ColumnPreview = { index: number; header: string; samples: string[] };
 

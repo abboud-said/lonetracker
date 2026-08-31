@@ -38,6 +38,10 @@ const dict = {
   errNoShifts: { sv: "Inga pass hittades i filen.", en: "No shifts found in the file." },
   errBadExcel: { sv: "Ogiltig Excel-fil.", en: "Invalid Excel file." },
   errNoSheet: { sv: "Kunde inte läsa kalkylbladet.", en: "Could not read the worksheet." },
+  errNotSchedule: {
+    sv: "Filen innehåller inga datum, så det här ser inte ut som ett schema. Kontrollera att du valt rätt fil — eller klistra in schemat som text i stället.",
+    en: "The file contains no dates, so this does not look like a schedule. Check you picked the right file — or paste the schedule as text instead.",
+  },
   errUnknown: { sv: "Kunde inte läsa filen.", en: "Could not read the file." },
 
   // Settings

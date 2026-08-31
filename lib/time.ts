@@ -148,13 +148,23 @@ export function dateLabel(isoDate: string, lang: Language): string {
   return `${WEEKDAYS[lang][dow]} ${d} ${MONTHS[lang][mo - 1]}`;
 }
 
-/** Currency is always SEK — OB is a Swedish concept — but grouping follows the UI language. */
+/**
+ * Currency is always SEK — OB is a Swedish concept — but grouping follows the
+ * UI language.
+ *
+ * Öre are shown because every figure here exists to be held against a line on
+ * a lönebesked, which carries them too. Rounding to whole kronor also rounded
+ * each figure independently, so a breakdown could fail to add up to its own
+ * total by a krona — August 1 308 and September 2 208 against 3 515 for both.
+ * A number that does not add up invites exactly the doubt this app is trying
+ * to remove.
+ */
 export function money(n: number, lang: Language): string {
   const locale = lang === "sv" ? "sv-SE" : "en-GB";
   const formatted = new Intl.NumberFormat(locale, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(Math.round(n));
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n);
   return `${formatted} kr`;
 }
 

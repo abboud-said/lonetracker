@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { parseErrorKey, t, type MessageKey } from "@/lib/i18n";
 import {
+  hasAnyDate,
   parseFreeText,
   previewColumns,
   readScheduleRows,
@@ -63,10 +64,17 @@ export function ScheduleInput({
         setMode("none");
       } catch (inner) {
         // Unrecognised headers are recoverable — the columns are all there, we
-        // just do not know which is which, so ask rather than give up.
+        // just do not know which is which, so ask rather than give up. A file
+        // with no dates anywhere in it is a different matter: there is nothing
+        // to point the mapper at, so say so instead of asking an unanswerable
+        // question.
         const code = inner instanceof ScheduleParseError ? inner.code : "unknown";
         if (code === "noDate" || code === "noTimes") {
-          setPending({ rows, columns: previewColumns(rows), name: file.name });
+          if (hasAnyDate(rows)) {
+            setPending({ rows, columns: previewColumns(rows), name: file.name });
+          } else {
+            setErrorKey("errNotSchedule");
+          }
         } else {
           setErrorKey(parseErrorKey(code));
         }
