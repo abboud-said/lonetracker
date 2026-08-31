@@ -301,6 +301,14 @@ export function computeTotals(
   leave: LeaveDays = NO_LEAVE(),
   ruleSet?: RuleSet,
   month: string | null = null,
+  /**
+   * Withholding for a month's gross, when it comes from a skattetabell.
+   * Skatteverket publishes an amount per income bracket, not a rate, and the
+   * rate it works out to climbs with the month — so the gross has to be handed
+   * to the table rather than multiplied by anything. Absent, the flat
+   * percentage in settings is used.
+   */
+  taxOf?: (gross: number) => number | null,
 ): Totals {
   const within = (day: Shift) => month == null || day.date.startsWith(month);
   const visibleLeave: LeaveDays = {
@@ -340,7 +348,7 @@ export function computeTotals(
     : { karensMinutes: 0, paidMinutes: 0, perTier: {}, amount: 0, daysBeyondPeriod: 0 };
   gross += sick.amount;
 
-  const tax = gross * (settings.taxRate / 100);
+  const tax = taxOf ? (taxOf(gross) ?? 0) : gross * (settings.taxRate / 100);
 
   return {
     shifts: results.length,

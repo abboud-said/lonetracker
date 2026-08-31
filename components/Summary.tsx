@@ -51,6 +51,7 @@ export function Summary({
   settings,
   lang,
   hasShifts,
+  taxKnown,
   months,
   month,
   onMonthChange,
@@ -62,6 +63,7 @@ export function Summary({
   settings: Settings;
   lang: Language;
   hasShifts: boolean;
+  taxKnown: boolean;
   months: string[];
   month: string | null;
   onMonthChange: (choice: string) => void;
@@ -70,7 +72,11 @@ export function Summary({
 }) {
   const { semester, sick, other } = totals.leave;
   const hasLeave = semester.length + sick.length + other.length > 0;
-  const hasTax = settings.taxRate > 0;
+  const hasTax = taxKnown;
+  // The rate is read back out of the figures rather than stored, so it is right
+  // whichever way the tax was arrived at — and with a skattetabell it is an
+  // output that moves with the month.
+  const effectiveRate = totals.gross > 0 ? (totals.tax / totals.gross) * 100 : 0;
 
   const picker = (
     <MonthPicker months={months} month={month} lang={lang} onChange={onMonthChange} />
@@ -221,7 +227,7 @@ export function Summary({
           <div className="mt-4 flex flex-col">
             <Stat label={t("gross", lang)} value={money(totals.gross, lang)} />
             <Stat
-              label={`${t("tax", lang)} · ${settings.taxRate.toFixed(2)} %`}
+              label={`${t("tax", lang)} · ${effectiveRate.toFixed(2)} %`}
               value={`− ${money(totals.tax, lang)}`}
               muted
             />

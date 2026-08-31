@@ -146,8 +146,8 @@ const dict = {
     en: "Enter your hourly rate. It is on your payslip, on the \"Timlön\" line.",
   },
   step2: {
-    sv: "Ta fram ett gammalt lönebesked och skriv av två rader: \"Bruttolön\" och \"Preliminär skatt\". Appen räknar ut din skatteprocent åt dig. Skatten dras enligt skattetabell och är personlig — det finns ingen procent som stämmer för alla.",
-    en: "Take an old payslip and copy across two lines: \"Bruttolön\" (gross) and \"Preliminär skatt\" (tax). The app works out your tax percentage from them. Tax is withheld by table and is personal — there is no percentage that is right for everyone.",
+    sv: "Välj vilken kommun du är folkbokförd i. Skatten räknas då ut ur Skatteverkets skattetabell, precis som din arbetsgivare gör. Har du inget lönebesked ännu spelar det ingen roll — det behövs inte.",
+    en: "Choose the municipality you are registered in. Tax is then taken from Skatteverket's tax table, the same way your employer does it. It does not matter if you have no payslip yet — none is needed.",
   },
   step3: {
     sv: "Ladda upp ditt schema. Det är filen \"Attestera tid\" som du laddar ner från schemasystemet (.xlsx eller .csv).",
@@ -161,6 +161,19 @@ const dict = {
     sv: "Från lönebeskedet: Preliminär skatt ÷ Bruttolön × 100",
     en: "From a payslip: tax deducted ÷ gross pay × 100",
   },
+  kommunLabel: { sv: "Kommun", en: "Municipality" },
+  chooseKommun: { sv: "Välj kommun", en: "Choose municipality" },
+  taxTableIs: { sv: "Skattetabell", en: "Tax table" },
+  churchMember: { sv: "Jag är medlem i Svenska kyrkan", en: "I am a member of Svenska kyrkan" },
+  kommunHint: {
+    sv: "Välj var du är folkbokförd, så används Skatteverkets skattetabell för din kommun. Skatten dras enligt tabell och inte som en fast procent — procenten stiger med hur mycket du tjänat den månaden.",
+    en: "Choose where you are registered and Skatteverket's tax table for your municipality is used. Tax is withheld by table, not as a flat percentage — the percentage rises with what you earned that month.",
+  },
+  kommunSpread: {
+    sv: "Kyrkoavgiften skiljer sig mellan församlingarna i din kommun, så tabellen kan vara en bredvid. Stämmer det inte mot lönebeskedet kan du räkna ut procenten därifrån i stället.",
+    en: "The church fee differs between parishes in your municipality, so the table may be one off. If it does not match your payslip, work the percentage out from that instead.",
+  },
+  useKommunInstead: { sv: "Välj kommun i stället", en: "Choose your municipality instead" },
   taxFromPayslip: {
     sv: "Skriv av två rader från ett gammalt lönebesked, vilken månad som helst. Appen räknar ut procenten.",
     en: "Copy two lines from any old payslip. The app works out the percentage.",
@@ -172,8 +185,8 @@ const dict = {
   usePercentInstead: { sv: "Jag vet min procent", en: "I know my percentage" },
   usePayslipInstead: { sv: "Räkna ut från ett lönebesked", en: "Work it out from a payslip" },
   netNeedsTax: {
-    sv: "Fyll i bruttolön och preliminär skatt från ett lönebesked ovan, så visas nettolönen här.",
-    en: "Enter gross pay and preliminary tax from a payslip above and net pay appears here.",
+    sv: "Välj din kommun ovan, så visas nettolönen här.",
+    en: "Choose your municipality above and net pay appears here.",
   },
   grossPayout: {
     sv: "Det här är vad du tjänat före skatt",

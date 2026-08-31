@@ -7,6 +7,7 @@ import { NO_LEAVE } from "@/lib/parse";
 import { getServerSnapshot, getSnapshot, setAppState, subscribe } from "@/lib/store";
 import type { AppState } from "@/lib/storage";
 import { ALL_MONTHS, monthsOf } from "@/lib/time";
+import { KOMMUNER, taxFromTable } from "@/lib/skattetabell";
 import type { Language, RuleSet, Settings } from "@/lib/types";
 import { RuleEditor } from "./RuleEditor";
 import { ShiftList } from "./ShiftList";
@@ -48,9 +49,22 @@ export function Tracker() {
     () => visibleShifts.map((shift) => computeShift(shift, ruleSet, settings)),
     [visibleShifts, ruleSet, settings],
   );
+  // With a kommun chosen the withholding comes from Skatteverket's table for
+  // the month's gross, which is what the employer actually does — so the
+  // percentage is an output here, never an input.
+  const taxOf = useMemo(() => {
+    if (settings.taxMode !== "kommun") return undefined;
+    const k = KOMMUNER.find((x) => x.name === settings.kommun);
+    if (!k) return undefined;
+    const table = settings.churchMember ? k.churchTable : k.table;
+    return (gross: number) => taxFromTable(gross, table);
+  }, [settings.taxMode, settings.kommun, settings.churchMember]);
+
+  const taxKnown = settings.taxMode === "kommun" ? taxOf != null : settings.taxRate > 0;
+
   const totals = useMemo(
-    () => computeTotals(results, settings, leave, ruleSet, month),
-    [results, settings, leave, ruleSet, month],
+    () => computeTotals(results, settings, leave, ruleSet, month, taxOf),
+    [results, settings, leave, ruleSet, month, taxOf],
   );
 
   // The document opens as Swedish and the language is a client-side choice, so
@@ -137,6 +151,7 @@ export function Tracker() {
         settings={settings}
         lang={lang}
         hasShifts={visibleShifts.length > 0}
+        taxKnown={taxKnown}
         months={months}
         month={month}
         onMonthChange={setMonthChoice}
@@ -221,6 +236,76 @@ function TaxFields({
     taxRate: gross > 0 && tax > 0 ? (tax / gross) * 100 : 0,
   });
 
+  if (settings.taxMode === "kommun") {
+    const chosen = KOMMUNER.find((k) => k.name === settings.kommun);
+    const table = chosen ? (settings.churchMember ? chosen.churchTable : chosen.table) : null;
+
+    return (
+      <div className="flex flex-col gap-2.5">
+        <div>
+          <span className="text-xs font-medium uppercase tracking-wide text-muted">
+            {t("taxRate", lang)}
+          </span>
+          <p className="text-xs text-muted mt-1 max-w-prose">{t("kommunHint", lang)}</p>
+        </div>
+
+        <div className="flex flex-wrap items-end gap-4">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted">
+              {t("kommunLabel", lang)}
+            </span>
+            <select
+              value={settings.kommun}
+              onChange={(e) => onChange({ kommun: e.target.value })}
+              className="bg-background border border-border rounded-lg min-h-11 px-2 py-2 text-sm outline-none focus:border-accent max-w-[14rem]"
+            >
+              <option value="">{t("chooseKommun", lang)}</option>
+              {KOMMUNER.map((k) => (
+                <option key={k.name} value={k.name}>
+                  {k.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {table != null ? (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted">
+                {t("taxTableIs", lang)}
+              </span>
+              <span className="text-sm tabular font-medium text-accent min-h-11 flex items-center">
+                {table}
+              </span>
+            </div>
+          ) : null}
+        </div>
+
+        <label className="flex items-start gap-2.5 cursor-pointer max-w-prose">
+          <input
+            type="checkbox"
+            checked={settings.churchMember}
+            onChange={(e) => onChange({ churchMember: e.target.checked })}
+            className="mt-0.5 accent-accent cursor-pointer"
+          />
+          <span className="text-sm">{t("churchMember", lang)}</span>
+        </label>
+
+        {chosen?.spread && settings.churchMember ? (
+          <p className="text-xs text-muted max-w-prose">{t("kommunSpread", lang)}</p>
+        ) : null}
+
+        <div className="flex flex-wrap gap-5">
+          <LinkButton onClick={() => onChange({ taxMode: "payslip" })}>
+            {t("usePayslipInstead", lang)}
+          </LinkButton>
+          <LinkButton onClick={() => onChange({ taxMode: "percent" })}>
+            {t("usePercentInstead", lang)}
+          </LinkButton>
+        </div>
+      </div>
+    );
+  }
+
   if (settings.taxMode === "percent") {
     return (
       <div className="flex flex-col gap-1.5">
@@ -235,8 +320,8 @@ function TaxFields({
           />
         </Field>
         <span className="text-xs text-muted">{t("taxHelp", lang)}</span>
-        <LinkButton onClick={() => onChange({ taxMode: "payslip", ...fromPayslip(settings.payslipGross, settings.payslipTax) })}>
-          {t("usePayslipInstead", lang)}
+        <LinkButton onClick={() => onChange({ taxMode: "kommun" })}>
+          {t("useKommunInstead", lang)}
         </LinkButton>
       </div>
     );
@@ -289,9 +374,14 @@ function TaxFields({
         </div>
       </div>
 
-      <LinkButton onClick={() => onChange({ taxMode: "percent" })}>
-        {t("usePercentInstead", lang)}
-      </LinkButton>
+      <div className="flex flex-wrap gap-5">
+        <LinkButton onClick={() => onChange({ taxMode: "kommun" })}>
+          {t("useKommunInstead", lang)}
+        </LinkButton>
+        <LinkButton onClick={() => onChange({ taxMode: "percent" })}>
+          {t("usePercentInstead", lang)}
+        </LinkButton>
+      </div>
     </div>
   );
 }

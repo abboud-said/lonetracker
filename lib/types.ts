@@ -60,7 +60,7 @@ export type Shift = {
  * "percent" stays available for anyone who has the figure already, from
  * jämkning or from last month's arithmetic.
  */
-export type TaxMode = "payslip" | "percent";
+export type TaxMode = "kommun" | "payslip" | "percent";
 
 export type Settings = {
   baseRate: number;
@@ -71,6 +71,15 @@ export type Settings = {
    */
   taxRate: number;
   taxMode: TaxMode;
+  /**
+   * Kommun the person is folkbokförd in, which decides their skattetabell.
+   * Empty until chosen. With a table the tax is looked up from the month's
+   * gross rather than derived as a percentage, because the table is what the
+   * employer actually withholds by.
+   */
+  kommun: string;
+  /** Members of Svenska kyrkan pay kyrkoavgift and sit on a higher table. */
+  churchMember: boolean;
   /** Bruttolön from a payslip, used only to derive taxRate. */
   payslipGross: number;
   /** Preliminär skatt from the same payslip. */

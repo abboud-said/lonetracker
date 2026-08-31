@@ -20,7 +20,9 @@ export function defaultState(): AppState {
       // Not 30. A pre-filled guess fed the biggest number on the page and read
       // as an answer; the app now asks for two payslip lines instead.
       taxRate: 0,
-      taxMode: "payslip",
+      taxMode: "kommun",
+      kommun: "",
+      churchMember: false,
       payslipGross: 0,
       payslipTax: 0,
       breakIsPaid: false,
@@ -54,6 +56,8 @@ export function loadState(): AppState {
         // Someone who already had a rate saved keeps it, and lands on the
         // percent field so it is visible rather than silently dropped.
         taxMode: readTaxMode(parsed.settings),
+        kommun: typeof parsed.settings?.kommun === "string" ? parsed.settings.kommun : "",
+        churchMember: parsed.settings?.churchMember === true,
         payslipGross: numberOr(parsed.settings?.payslipGross, 0),
         payslipTax: numberOr(parsed.settings?.payslipTax, 0),
         breakIsPaid: parsed.settings?.breakIsPaid === true,
@@ -86,11 +90,15 @@ export function saveState(state: AppState): void {
 }
 
 function readTaxMode(settings: Partial<Settings> | undefined): TaxMode {
-  if (settings?.taxMode === "payslip" || settings?.taxMode === "percent") return settings.taxMode;
+  const mode = settings?.taxMode;
+  if (mode === "kommun" || mode === "payslip" || mode === "percent") return mode;
+  // Older saved states predate the modes: land them wherever their data is, so
+  // nothing a person already entered disappears behind a new default.
+  if (typeof settings?.kommun === "string" && settings.kommun !== "") return "kommun";
   const gross = numberOr(settings?.payslipGross, 0);
   const tax = numberOr(settings?.payslipTax, 0);
   if (gross > 0 && tax > 0) return "payslip";
-  return numberOr(settings?.taxRate, 0) > 0 ? "percent" : "payslip";
+  return numberOr(settings?.taxRate, 0) > 0 ? "percent" : "kommun";
 }
 
 function numberOr(value: unknown, fallback: number): number {
