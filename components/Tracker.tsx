@@ -7,7 +7,7 @@ import { NO_LEAVE } from "@/lib/parse";
 import { getServerSnapshot, getSnapshot, setAppState, subscribe } from "@/lib/store";
 import type { AppState } from "@/lib/storage";
 import { ALL_MONTHS, monthsOf } from "@/lib/time";
-import type { Language, RuleSet } from "@/lib/types";
+import type { Language, RuleSet, Settings } from "@/lib/types";
 import { RuleEditor } from "./RuleEditor";
 import { ShiftList } from "./ShiftList";
 import { Summary } from "./Summary";
@@ -113,7 +113,7 @@ export function Tracker() {
       />
 
       <Section title={t("pay", lang)}>
-        <div className="flex flex-wrap gap-6">
+        <div className="flex flex-col gap-5">
           <Field label={t("baseRate", lang)} suffix={t("baseRateUnit", lang)}>
             <NumberInput
               value={settings.baseRate}
@@ -122,19 +122,13 @@ export function Tracker() {
               onChange={(baseRate) => patch({ settings: { ...settings, baseRate } })}
             />
           </Field>
-          <div className="flex flex-col gap-1">
-            <Field label={t("taxRate", lang)} suffix={t("taxRateUnit", lang)}>
-              <NumberInput
-                value={settings.taxRate}
-                lang={lang}
-                className="w-20 text-right"
-                onChange={(taxRate) => patch({ settings: { ...settings, taxRate } })}
-              />
-            </Field>
-            <span className="text-xs text-muted">{t("taxHelp", lang)}</span>
-          </div>
-        </div>
 
+          <TaxFields
+            settings={settings}
+            lang={lang}
+            onChange={(next) => patch({ settings: { ...settings, ...next } })}
+          />
+        </div>
       </Section>
 
       <Summary
@@ -200,6 +194,105 @@ export function Tracker() {
         {t("privacy", lang)}
       </p>
     </main>
+  );
+}
+
+/**
+ * Tax, asked for the only way most people can actually answer it.
+ *
+ * Preliminärskatt follows a skattetabell and rises with the month's gross, so
+ * there is no single percentage anyone knows off-hand — the app used to ask
+ * for one anyway, pre-filled with 30 %, and that number then drove the largest
+ * figure on the page. Two lines copied off any old lönebesked need no
+ * knowledge at all, and give the rate that person is actually on.
+ */
+function TaxFields({
+  settings,
+  lang,
+  onChange,
+}: {
+  settings: Settings;
+  lang: Language;
+  onChange: (next: Partial<Settings>) => void;
+}) {
+  const fromPayslip = (gross: number, tax: number) => ({
+    payslipGross: gross,
+    payslipTax: tax,
+    taxRate: gross > 0 && tax > 0 ? (tax / gross) * 100 : 0,
+  });
+
+  if (settings.taxMode === "percent") {
+    return (
+      <div className="flex flex-col gap-1.5">
+        <Field label={t("taxRate", lang)} suffix={t("taxRateUnit", lang)}>
+          <NumberInput
+            value={settings.taxRate}
+            lang={lang}
+            blankWhenZero
+            placeholder="0"
+            className="w-24 text-right"
+            onChange={(taxRate) => onChange({ taxRate })}
+          />
+        </Field>
+        <span className="text-xs text-muted">{t("taxHelp", lang)}</span>
+        <LinkButton onClick={() => onChange({ taxMode: "payslip", ...fromPayslip(settings.payslipGross, settings.payslipTax) })}>
+          {t("usePayslipInstead", lang)}
+        </LinkButton>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2.5">
+      <div>
+        <span className="text-xs font-medium uppercase tracking-wide text-muted">
+          {t("taxRate", lang)}
+        </span>
+        <p className="text-xs text-muted mt-1 max-w-prose">{t("taxFromPayslip", lang)}</p>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-4">
+        <Field label={t("payslipGross", lang)} suffix="kr">
+          <NumberInput
+            value={settings.payslipGross}
+            lang={lang}
+            blankWhenZero
+            placeholder="26 167,79"
+            className="w-32 text-right"
+            onChange={(gross) => onChange(fromPayslip(gross, settings.payslipTax))}
+          />
+        </Field>
+        <Field label={t("payslipTax", lang)} suffix="kr">
+          <NumberInput
+            value={settings.payslipTax}
+            lang={lang}
+            blankWhenZero
+            placeholder="4 630,00"
+            className="w-32 text-right"
+            onChange={(tax) => onChange(fromPayslip(settings.payslipGross, tax))}
+          />
+        </Field>
+
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted">
+            {t("yourTaxRate", lang)}
+          </span>
+          <span
+            className={`text-sm tabular font-medium min-h-11 flex items-center ${
+              settings.taxRate > 0 ? "text-accent" : "text-muted"
+            }`}
+          >
+            {settings.taxRate > 0
+              ? `${settings.taxRate.toFixed(2).replace(".", lang === "sv" ? "," : ".")} %`
+              : t("taxNotSetYet", lang)}
+          </span>
+        </div>
+      </div>
+
+      <LinkButton onClick={() => onChange({ taxMode: "percent" })}>
+        {t("usePercentInstead", lang)}
+      </LinkButton>
+    </div>
   );
 }
 

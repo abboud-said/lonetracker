@@ -70,6 +70,7 @@ export function Summary({
 }) {
   const { semester, sick, other } = totals.leave;
   const hasLeave = semester.length + sick.length + other.length > 0;
+  const hasTax = settings.taxRate > 0;
 
   const picker = (
     <MonthPicker months={months} month={month} lang={lang} onChange={onMonthChange} />
@@ -209,26 +210,46 @@ export function Summary({
         </div>
       ) : null}
 
-      <div className="mt-4 flex flex-col">
-        <Stat label={t("gross", lang)} value={money(totals.gross, lang)} />
-        <Stat
-          label={`${t("tax", lang)} · ${settings.taxRate} %`}
-          value={`− ${money(totals.tax, lang)}`}
-          muted
-        />
-      </div>
+      {/* Without a real tax rate there is no net worth showing. A guessed one
+          drove the biggest number on the page and read as an answer — it sent
+          someone checking against their own payslip away believing the app was
+          3 000 kr wrong, when its gross was right to the krona. So gross takes
+          the headline until a rate exists, being the figure the app can stand
+          behind on its own. */}
+      {hasTax ? (
+        <>
+          <div className="mt-4 flex flex-col">
+            <Stat label={t("gross", lang)} value={money(totals.gross, lang)} />
+            <Stat
+              label={`${t("tax", lang)} · ${settings.taxRate.toFixed(2)} %`}
+              value={`− ${money(totals.tax, lang)}`}
+              muted
+            />
+          </div>
 
-      {/* Net is the figure people actually came for, so it gets its own block
-          rather than being one more row in the list. */}
-      <div className="mt-4 rounded-lg bg-accent-soft px-4 py-3.5">
-        <div className="flex items-baseline justify-between gap-4">
-          <span className="text-sm font-semibold">{t("net", lang)}</span>
-          <span className="tabular text-2xl font-semibold">{money(totals.net, lang)}</span>
-        </div>
-        <p className="text-xs text-muted mt-0.5">{t("netPayout", lang)}</p>
-      </div>
+          <div className="mt-4 rounded-lg bg-accent-soft px-4 py-3.5">
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="text-sm font-semibold">{t("net", lang)}</span>
+              <span className="tabular text-2xl font-semibold">{money(totals.net, lang)}</span>
+            </div>
+            <p className="text-xs text-muted mt-0.5">{t("netPayout", lang)}</p>
+          </div>
 
-      <p className="text-xs text-muted mt-3 max-w-prose">{t("taxEstimate", lang)}</p>
+          <p className="text-xs text-muted mt-3 max-w-prose">{t("taxEstimate", lang)}</p>
+        </>
+      ) : (
+        <>
+          <div className="mt-4 rounded-lg bg-accent-soft px-4 py-3.5">
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="text-sm font-semibold">{t("gross", lang)}</span>
+              <span className="tabular text-2xl font-semibold">{money(totals.gross, lang)}</span>
+            </div>
+            <p className="text-xs text-muted mt-0.5">{t("grossPayout", lang)}</p>
+          </div>
+
+          <p className="text-xs text-muted mt-3 max-w-prose">{t("netNeedsTax", lang)}</p>
+        </>
+      )}
     </Section>
   );
 }

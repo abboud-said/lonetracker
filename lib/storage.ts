@@ -1,6 +1,6 @@
 import { NO_LEAVE, type LeaveDays } from "./parse";
 import { detaljhandelPreset } from "./rules";
-import type { Language, RuleSet, Settings, Shift } from "./types";
+import type { Language, RuleSet, Settings, Shift, TaxMode } from "./types";
 
 const KEY = "lonetracker.v2";
 
@@ -15,7 +15,18 @@ export type AppState = {
 
 export function defaultState(): AppState {
   return {
-    settings: { baseRate: 177.44, taxRate: 30, breakIsPaid: false, semesterPayPerDay: 0, weeklyHours: 0 },
+    settings: {
+      baseRate: 177.44,
+      // Not 30. A pre-filled guess fed the biggest number on the page and read
+      // as an answer; the app now asks for two payslip lines instead.
+      taxRate: 0,
+      taxMode: "payslip",
+      payslipGross: 0,
+      payslipTax: 0,
+      breakIsPaid: false,
+      semesterPayPerDay: 0,
+      weeklyHours: 0,
+    },
     ruleSet: detaljhandelPreset(),
     shifts: [],
     leave: NO_LEAVE(),
@@ -40,6 +51,11 @@ export function loadState(): AppState {
       settings: {
         baseRate: numberOr(parsed.settings?.baseRate, fallback.settings.baseRate),
         taxRate: numberOr(parsed.settings?.taxRate, fallback.settings.taxRate),
+        // Someone who already had a rate saved keeps it, and lands on the
+        // percent field so it is visible rather than silently dropped.
+        taxMode: readTaxMode(parsed.settings),
+        payslipGross: numberOr(parsed.settings?.payslipGross, 0),
+        payslipTax: numberOr(parsed.settings?.payslipTax, 0),
         breakIsPaid: parsed.settings?.breakIsPaid === true,
         semesterPayPerDay: numberOr(parsed.settings?.semesterPayPerDay, 0),
         weeklyHours: numberOr(parsed.settings?.weeklyHours, 0),
@@ -67,6 +83,14 @@ export function saveState(state: AppState): void {
     // Storage can be full or blocked in private mode; the app still works for
     // this session, it just will not remember anything.
   }
+}
+
+function readTaxMode(settings: Partial<Settings> | undefined): TaxMode {
+  if (settings?.taxMode === "payslip" || settings?.taxMode === "percent") return settings.taxMode;
+  const gross = numberOr(settings?.payslipGross, 0);
+  const tax = numberOr(settings?.payslipTax, 0);
+  if (gross > 0 && tax > 0) return "payslip";
+  return numberOr(settings?.taxRate, 0) > 0 ? "percent" : "payslip";
 }
 
 function numberOr(value: unknown, fallback: number): number {

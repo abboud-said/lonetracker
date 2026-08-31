@@ -53,9 +53,28 @@ export type Shift = {
   breakMin: number;
 };
 
+/**
+ * How the tax percentage was arrived at. Preliminärskatt follows a
+ * skattetabell, not a flat rate, so there is no percentage anyone simply
+ * knows — the workable version is to read two lines off a payslip and divide.
+ * "percent" stays available for anyone who has the figure already, from
+ * jämkning or from last month's arithmetic.
+ */
+export type TaxMode = "payslip" | "percent";
+
 export type Settings = {
   baseRate: number;
+  /**
+   * Percentage withheld. Zero means *not known yet*, which is a real state and
+   * not the same as zero tax: a guessed rate drives the largest figure on the
+   * page, so until this is set the app shows gross and says why.
+   */
   taxRate: number;
+  taxMode: TaxMode;
+  /** Bruttolön from a payslip, used only to derive taxRate. */
+  payslipGross: number;
+  /** Preliminär skatt from the same payslip. */
+  payslipTax: number;
   /**
    * Rast is unpaid and outside working time (Detaljhandelsavtalet §6.1), so it
    * is deducted by default. A måltidsuppehåll under §6.5, and any paus under

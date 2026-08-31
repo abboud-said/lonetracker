@@ -146,8 +146,8 @@ const dict = {
     en: "Enter your hourly rate. It is on your payslip, on the \"Timlön\" line.",
   },
   step2: {
-    sv: "Fyll i din skatteprocent. Ta fram ett gammalt lönebesked och leta upp två rader: \"Bruttolön\" och \"Preliminär skatt\". Dela skatten med bruttolönen och gånga med 100. Exempel: 4 630 ÷ 26 168 × 100 = 17,7 %. Skatten är personlig — 30 % som står här från början stämmer nästan aldrig.",
-    en: "Enter your tax percentage. Take an old payslip and find two lines: \"Bruttolön\" (gross) and \"Preliminär skatt\" (tax). Divide the tax by the gross and multiply by 100. Example: 4 630 ÷ 26 168 × 100 = 17.7 %. Tax is personal — the 30 % filled in here to begin with is almost never right.",
+    sv: "Ta fram ett gammalt lönebesked och skriv av två rader: \"Bruttolön\" och \"Preliminär skatt\". Appen räknar ut din skatteprocent åt dig. Skatten dras enligt skattetabell och är personlig — det finns ingen procent som stämmer för alla.",
+    en: "Take an old payslip and copy across two lines: \"Bruttolön\" (gross) and \"Preliminär skatt\" (tax). The app works out your tax percentage from them. Tax is withheld by table and is personal — there is no percentage that is right for everyone.",
   },
   step3: {
     sv: "Ladda upp ditt schema. Det är filen \"Attestera tid\" som du laddar ner från schemasystemet (.xlsx eller .csv).",
@@ -160,6 +160,24 @@ const dict = {
   taxHelp: {
     sv: "Från lönebeskedet: Preliminär skatt ÷ Bruttolön × 100",
     en: "From a payslip: tax deducted ÷ gross pay × 100",
+  },
+  taxFromPayslip: {
+    sv: "Skriv av två rader från ett gammalt lönebesked, vilken månad som helst. Appen räknar ut procenten.",
+    en: "Copy two lines from any old payslip. The app works out the percentage.",
+  },
+  payslipGross: { sv: "Bruttolön", en: "Gross pay" },
+  payslipTax: { sv: "Preliminär skatt", en: "Preliminary tax" },
+  yourTaxRate: { sv: "Din skatteprocent", en: "Your tax rate" },
+  taxNotSetYet: { sv: "Inte uträknad än", en: "Not worked out yet" },
+  usePercentInstead: { sv: "Jag vet min procent", en: "I know my percentage" },
+  usePayslipInstead: { sv: "Räkna ut från ett lönebesked", en: "Work it out from a payslip" },
+  netNeedsTax: {
+    sv: "Fyll i bruttolön och preliminär skatt från ett lönebesked ovan, så visas nettolönen här.",
+    en: "Enter gross pay and preliminary tax from a payslip above and net pay appears here.",
+  },
+  grossPayout: {
+    sv: "Det här är vad du tjänat före skatt",
+    en: "This is what you earned before tax",
   },
 
   addManually: { sv: "Skriv in pass för hand", en: "Enter shifts by hand" },
