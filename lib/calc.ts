@@ -143,11 +143,19 @@ function daysBetween(a: string, b: string): number {
  * agreed average working week, taken from the front; nothing is paid for it.
  * Everything after is paid at 80 %, including 80 % of the OB those hours would
  * have earned.
+ *
+ * `include` narrows what is *reported* without narrowing what is *walked*. A
+ * sick period that opens on 29 August and runs into September has one karens,
+ * charged in August; filtering the days down to September before the walk
+ * would open a second one and pay the month short. So every sick day is always
+ * walked for the period bookkeeping, and only the days the caller asks for are
+ * added to the totals.
  */
 export function computeSickPay(
   sickDays: Shift[],
   ruleSet: RuleSet,
   settings: Settings,
+  include: (day: Shift) => boolean = () => true,
 ): SickResult {
   const perTier: TierMinutes = {};
   let karensMinutes = 0;
@@ -171,9 +179,13 @@ export function computeSickPay(
     }
     previousDay = day.date;
 
+    // Days outside the caller's window still consume karens and still advance
+    // the period, they just do not appear in the figures.
+    const reported = include(day);
+
     // Past day fourteen the employer stops paying and Försäkringskassan starts.
     if (periodStart != null && daysBetween(periodStart, day.date) >= SICK_PERIOD_DAYS) {
-      daysBeyondPeriod++;
+      if (reported) daysBeyondPeriod++;
       continue;
     }
 
@@ -189,10 +201,10 @@ export function computeSickPay(
       if (karensLeft > 0) {
         const swallowed = Math.min(karensLeft, minutes);
         karensLeft -= swallowed;
-        karensMinutes += swallowed;
+        if (reported) karensMinutes += swallowed;
         minutes -= swallowed;
       }
-      if (minutes <= 0) continue;
+      if (minutes <= 0 || !reported) continue;
 
       perTier[seg.tierId] = (perTier[seg.tierId] ?? 0) + minutes;
       paidMinutes += minutes;
@@ -276,12 +288,27 @@ export function computeShift(shift: Shift, ruleSet: RuleSet, settings: Settings)
   };
 }
 
+/**
+ * Totals for one month, or for everything loaded when `month` is null.
+ *
+ * The shift results are filtered by the caller, but leave is not: sjuklön has
+ * to see every sick day to get its periods right, so the whole set is passed
+ * in and narrowed here.
+ */
 export function computeTotals(
   results: ShiftResult[],
   settings: Settings,
   leave: LeaveDays = NO_LEAVE(),
   ruleSet?: RuleSet,
+  month: string | null = null,
 ): Totals {
+  const within = (day: Shift) => month == null || day.date.startsWith(month);
+  const visibleLeave: LeaveDays = {
+    semester: leave.semester.filter(within),
+    sick: leave.sick.filter(within),
+    other: leave.other.filter(within),
+  };
+
   const perTier: TierMinutes = {};
   const tierAmounts: Record<string, number> = {};
   let paidMinutes = 0;
@@ -305,11 +332,11 @@ export function computeTotals(
   //
   // Other leave stays out — tjänstledighet and the rest may not be paid at all,
   // and the export does not say which.
-  const semesterPay = leave.semester.length * (settings.semesterPayPerDay || 0);
+  const semesterPay = visibleLeave.semester.length * (settings.semesterPayPerDay || 0);
   gross += semesterPay;
 
   const sick = ruleSet
-    ? computeSickPay(leave.sick, ruleSet, settings)
+    ? computeSickPay(leave.sick, ruleSet, settings, within)
     : { karensMinutes: 0, paidMinutes: 0, perTier: {}, amount: 0, daysBeyondPeriod: 0 };
   gross += sick.amount;
 
@@ -317,7 +344,7 @@ export function computeTotals(
 
   return {
     shifts: results.length,
-    leave,
+    leave: visibleLeave,
     semesterPay,
     sick,
     paidMinutes,

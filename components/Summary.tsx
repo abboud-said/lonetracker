@@ -2,9 +2,51 @@
 
 import type { Totals } from "@/lib/calc";
 import { t } from "@/lib/i18n";
-import { hours, money } from "@/lib/time";
+import { hours, money, monthLabel } from "@/lib/time";
 import type { Language, RuleSet, Settings } from "@/lib/types";
 import { NumberInput, Section, Stat } from "./ui";
+
+/** Sentinel for "do not narrow to a month at all". */
+export const ALL_MONTHS = "all";
+
+/**
+ * Only offered once a schedule actually spans more than one month — with a
+ * single month there is nothing to choose, and an inert control would be one
+ * more thing to read past.
+ */
+function MonthPicker({
+  months,
+  month,
+  lang,
+  onChange,
+}: {
+  months: string[];
+  month: string | null;
+  lang: Language;
+  onChange: (choice: string) => void;
+}) {
+  if (months.length < 2) return null;
+
+  return (
+    <label className="flex items-center gap-2">
+      <span className="text-xs font-medium uppercase tracking-wide text-muted">
+        {t("month", lang)}
+      </span>
+      <select
+        value={month ?? ALL_MONTHS}
+        onChange={(e) => onChange(e.target.value)}
+        className="bg-background border border-border rounded-lg min-h-11 px-2 py-2 text-sm outline-none focus:border-accent"
+      >
+        {months.map((m) => (
+          <option key={m} value={m}>
+            {monthLabel(m, lang)}
+          </option>
+        ))}
+        <option value={ALL_MONTHS}>{t("allMonths", lang)}</option>
+      </select>
+    </label>
+  );
+}
 
 export function Summary({
   totals,
@@ -12,6 +54,9 @@ export function Summary({
   settings,
   lang,
   hasShifts,
+  months,
+  month,
+  onMonthChange,
   onSemesterPayChange,
   onWeeklyHoursChange,
 }: {
@@ -20,22 +65,39 @@ export function Summary({
   settings: Settings;
   lang: Language;
   hasShifts: boolean;
+  months: string[];
+  month: string | null;
+  onMonthChange: (choice: string) => void;
   onSemesterPayChange: (value: number) => void;
   onWeeklyHoursChange: (value: number) => void;
 }) {
   const { semester, sick, other } = totals.leave;
   const hasLeave = semester.length + sick.length + other.length > 0;
 
+  const picker = (
+    <MonthPicker months={months} month={month} lang={lang} onChange={onMonthChange} />
+  );
+
   if (!hasShifts && !hasLeave) {
     return (
-      <Section title={t("summary", lang)}>
-        <p className="text-sm text-muted">{t("uploadToSee", lang)}</p>
+      <Section
+      title={t("summary", lang)}
+      hint={months.length > 1 ? t("monthNote", lang) : undefined}
+      actions={picker}
+    >
+        <p className="text-sm text-muted">
+          {months.length > 1 ? t("nothingThisMonth", lang) : t("uploadToSee", lang)}
+        </p>
       </Section>
     );
   }
 
   return (
-    <Section title={t("summary", lang)}>
+    <Section
+      title={t("summary", lang)}
+      hint={months.length > 1 ? t("monthNote", lang) : undefined}
+      actions={picker}
+    >
       <div className="flex flex-col">
         <Stat label={t("shiftsCount", lang)} value={String(totals.shifts)} muted />
         <Stat label={t("totalHours", lang)} value={hours(totals.paidMinutes, lang)} muted />

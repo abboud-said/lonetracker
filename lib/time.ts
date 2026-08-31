@@ -107,6 +107,29 @@ const MONTHS: Record<Language, string[]> = {
   en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
 };
 
+const MONTHS_LONG: Record<Language, string[]> = {
+  sv: [
+    "januari", "februari", "mars", "april", "maj", "juni",
+    "juli", "augusti", "september", "oktober", "november", "december",
+  ],
+  en: [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ],
+};
+
+/** The distinct YYYY-MM present in a set of dates, oldest first. */
+export function monthsOf(dates: string[]): string[] {
+  return [...new Set(dates.map((d) => d.slice(0, 7)))].sort();
+}
+
+/** "2026-08" as "augusti 2026". */
+export function monthLabel(month: string, lang: Language): string {
+  const [y, m] = month.split("-").map(Number);
+  const name = MONTHS_LONG[lang][m - 1] ?? month;
+  return `${name} ${y}`;
+}
+
 const WEEKDAYS: Record<Language, string[]> = {
   sv: ["Sön", "Mån", "Tis", "Ons", "Tor", "Fre", "Lör"],
   en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],

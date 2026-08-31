@@ -125,6 +125,16 @@ const dict = {
     sv: "Ladda upp ett schema för att se din lön.",
     en: "Upload a schedule to see your pay.",
   },
+  month: { sv: "Månad", en: "Month" },
+  allMonths: { sv: "Alla månader", en: "All months" },
+  nothingThisMonth: {
+    sv: "Inga pass den här månaden. Välj en annan månad ovan.",
+    en: "No shifts this month. Choose another month above.",
+  },
+  monthNote: {
+    sv: "Ett lönebesked gäller en månad i taget, så sammanställningen visar en månad i taget.",
+    en: "A payslip covers one month, so the summary shows one month at a time.",
+  },
 
   howToTitle: { sv: "Så här gör du", en: "Getting started" },
   step1: {

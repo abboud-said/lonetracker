@@ -6,6 +6,8 @@ import { t } from "@/lib/i18n";
 import { NO_LEAVE } from "@/lib/parse";
 import { getServerSnapshot, getSnapshot, setAppState, subscribe } from "@/lib/store";
 import type { AppState } from "@/lib/storage";
+import { monthsOf } from "@/lib/time";
+import { ALL_MONTHS } from "./Summary";
 import type { Language, RuleSet } from "@/lib/types";
 import { RuleEditor } from "./RuleEditor";
 import { ShiftList } from "./ShiftList";
@@ -19,13 +21,37 @@ export function Tracker() {
 
   const { settings, ruleSet, shifts, leave, fileName, language: lang } = state;
 
+  // A payslip covers one month, so that is what the summary has to cover. An
+  // export that runs over a month boundary would otherwise total both and match
+  // nothing the employer ever sent.
+  const months = useMemo(
+    () =>
+      monthsOf(
+        [...shifts, ...leave.semester, ...leave.sick, ...leave.other].map((s) => s.date),
+      ),
+    [shifts, leave],
+  );
+
+  const [monthChoice, setMonthChoice] = useState<string | null>(null);
+  const month =
+    monthChoice === ALL_MONTHS
+      ? null
+      : monthChoice != null && months.includes(monthChoice)
+        ? monthChoice
+        : (months[months.length - 1] ?? null);
+
+  const visibleShifts = useMemo(
+    () => (month == null ? shifts : shifts.filter((s) => s.date.startsWith(month))),
+    [shifts, month],
+  );
+
   const results = useMemo(
-    () => shifts.map((shift) => computeShift(shift, ruleSet, settings)),
-    [shifts, ruleSet, settings],
+    () => visibleShifts.map((shift) => computeShift(shift, ruleSet, settings)),
+    [visibleShifts, ruleSet, settings],
   );
   const totals = useMemo(
-    () => computeTotals(results, settings, leave, ruleSet),
-    [results, settings, leave, ruleSet],
+    () => computeTotals(results, settings, leave, ruleSet, month),
+    [results, settings, leave, ruleSet, month],
   );
 
   const patch = (next: Partial<AppState>) => setAppState((prev) => ({ ...prev, ...next }));
@@ -110,7 +136,10 @@ export function Tracker() {
         ruleSet={ruleSet}
         settings={settings}
         lang={lang}
-        hasShifts={shifts.length > 0}
+        hasShifts={visibleShifts.length > 0}
+        months={months}
+        month={month}
+        onMonthChange={setMonthChoice}
         onSemesterPayChange={(v: number) => patch({ settings: { ...settings, semesterPayPerDay: v } })}
         onWeeklyHoursChange={(v: number) => patch({ settings: { ...settings, weeklyHours: v } })}
       />
