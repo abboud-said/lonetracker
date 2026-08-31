@@ -9,9 +9,9 @@ import {
   newId,
   validateRuleSet,
 } from "@/lib/rules";
-import { fromHhmm, hhmm, parseNumber, weekdayLabel } from "@/lib/time";
+import { fromHhmm, hhmm, weekdayLabel } from "@/lib/time";
 import type { DayKey, Language, ObTier, ObWindow, RuleSet } from "@/lib/types";
-import { Button, Section, TextInput } from "./ui";
+import { Button, NumberInput, Section, TextInput } from "./ui";
 
 function dayKeyLabel(day: DayKey, lang: Language): string {
   if (day === "eve") return t("dayEve", lang);
@@ -49,13 +49,13 @@ function TimeInput({ value, onCommit }: { value: number; onCommit: (min: number)
     <input
       type="text"
       value={draft}
-      inputMode="numeric"
+      inputMode="text"
       onChange={(e) => setDraft(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => {
         if (e.key === "Enter") e.currentTarget.blur();
       }}
-      className="w-[4.5rem] bg-background border border-border rounded-lg px-2 py-1.5 text-sm tabular outline-none focus:border-accent"
+      className="w-[4.75rem] bg-background border border-border rounded-lg min-h-11 px-2 py-2 text-sm tabular outline-none focus:border-accent"
     />
   );
 }
@@ -161,10 +161,10 @@ export function RuleEditor({
                   onChange={(label) => updateTier(tier.id, { label })}
                   className="w-40"
                 />
-                <TextInput
-                  value={String(tier.percent)}
-                  inputMode="decimal"
-                  onChange={(v) => updateTier(tier.id, { percent: parseNumber(v) })}
+                <NumberInput
+                  value={tier.percent}
+                  lang={lang}
+                  onChange={(percent) => updateTier(tier.id, { percent })}
                   className="w-20 text-right"
                 />
                 <span className="text-sm text-muted">%</span>
@@ -218,7 +218,7 @@ export function RuleEditor({
                       <select
                         value={w.tierId}
                         onChange={(e) => updateWindow(w.id, { tierId: e.target.value })}
-                        className="bg-background border border-border rounded-lg px-2 py-1.5 text-sm outline-none focus:border-accent"
+                        className="bg-background border border-border rounded-lg min-h-11 px-2 py-2 text-sm outline-none focus:border-accent"
                       >
                         {ruleSet.tiers.map((tier) => (
                           <option key={tier.id} value={tier.id}>
@@ -243,7 +243,7 @@ export function RuleEditor({
                           type="button"
                           onClick={() => toggleDay(w, day)}
                           aria-pressed={on}
-                          className={`rounded-md px-2 py-1 text-xs font-medium border transition-colors cursor-pointer ${
+                          className={`inline-flex items-center justify-center min-w-11 min-h-11 rounded-md px-3 text-xs font-medium border transition-colors cursor-pointer ${
                             on
                               ? "border-accent bg-accent text-white"
                               : "border-border text-muted hover:text-foreground"

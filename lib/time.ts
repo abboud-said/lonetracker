@@ -27,12 +27,61 @@ export function hhmm(min: number): string {
   return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
 }
 
-/** Format "HH:MM" back into minutes; returns null on anything unparseable. */
-export function fromHhmm(value: string): number | null {
-  const m = value.match(/^(\d{1,2}):(\d{2})$/);
-  if (!m) return null;
-  const min = Number(m[1]) * 60 + Number(m[2]);
+function clock(h: number, m: number): number | null {
+  if (m > 59) return null;
+  const min = h * 60 + m;
   return min >= 0 && min <= 1440 ? min : null;
+}
+
+/**
+ * Read a clock time the way someone actually types one.
+ *
+ * A phone raises a digits-only keypad for these fields, and on iOS it has no
+ * colon key at all — so insisting on "17:00" locked out anyone entering shifts
+ * by hand on an iPhone, which is the one route that is meant to work for
+ * everybody. Bare digits are accepted for that reason: 1700, 930 and 17 all
+ * mean what they look like.
+ */
+export function fromHhmm(value: string): number | null {
+  const s = value.trim();
+  if (s === "") return null;
+
+  // 17:00 and 17.00, plus 17:5 — which nobody means as 17:50.
+  const sep = s.match(/^(\d{1,2})[:.,](\d{1,2})$/);
+  if (sep) return clock(Number(sep[1]), Number(sep[2].padStart(2, "0")));
+
+  const bare = s.match(/^\d{1,4}$/);
+  if (bare) {
+    const d = bare[0];
+    if (d.length <= 2) return clock(Number(d), 0);
+    return clock(Number(d.slice(0, -2)), Number(d.slice(-2)));
+  }
+
+  return null;
+}
+
+/**
+ * Read a break length. A bare number is minutes, because that is how a break
+ * is spoken and written — "30" is half an hour, not thirty hours. Separated
+ * forms still mean hours and minutes, so 1:15 is 75 minutes.
+ */
+export function parseDuration(value: string): number | null {
+  const s = value.trim();
+  if (s === "") return null;
+
+  const sep = s.match(/^(\d{1,2})[:.,](\d{1,2})$/);
+  if (sep) {
+    const m = Number(sep[2].padStart(2, "0"));
+    return m > 59 ? null : Number(sep[1]) * 60 + m;
+  }
+
+  const bare = s.match(/^\d{1,4}$/);
+  if (bare) {
+    const min = Number(bare[0]);
+    return min <= 1440 ? min : null;
+  }
+
+  return null;
 }
 
 export function weekdayOf(isoDate: string): Weekday {
@@ -92,4 +141,26 @@ export function hours(min: number, lang: Language): string {
 export function parseNumber(value: string): number {
   const n = parseFloat(String(value).replace(",", "."));
   return isFinite(n) ? n : 0;
+}
+
+/**
+ * Parse a number the user is part-way through typing, keeping "not a number
+ * yet" distinct from zero. Emptying a field to retype it used to commit a 0,
+ * which then sat in front of everything typed next.
+ *
+ * "177," and "177." parse to 177 so totals keep up mid-keystroke, while the
+ * field goes on showing what was typed. Negatives are refused: a rate or a tax
+ * percentage below zero has no meaning here.
+ */
+export function parseNumberOrNull(value: string): number | null {
+  const s = value.trim().replace(",", ".");
+  if (s === "" || s === "." || !/^\d*\.?\d*$/.test(s)) return null;
+  const n = parseFloat(s);
+  return isFinite(n) ? n : null;
+}
+
+/** Show a number back using the decimal separator of the UI language. */
+export function formatNumberInput(n: number, lang: Language): string {
+  const s = String(n);
+  return lang === "sv" ? s.replace(".", ",") : s;
 }

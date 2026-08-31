@@ -6,13 +6,12 @@ import { t } from "@/lib/i18n";
 import { NO_LEAVE } from "@/lib/parse";
 import { getServerSnapshot, getSnapshot, setAppState, subscribe } from "@/lib/store";
 import type { AppState } from "@/lib/storage";
-import { parseNumber } from "@/lib/time";
 import type { Language, RuleSet } from "@/lib/types";
 import { RuleEditor } from "./RuleEditor";
 import { ShiftList } from "./ShiftList";
 import { Summary } from "./Summary";
 import { ScheduleInput } from "./ScheduleInput";
-import { Field, Section, TextInput } from "./ui";
+import { Field, LinkButton, NumberInput, Section } from "./ui";
 
 export function Tracker() {
   const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
@@ -84,20 +83,20 @@ export function Tracker() {
       <Section title={t("pay", lang)}>
         <div className="flex flex-wrap gap-6">
           <Field label={t("baseRate", lang)} suffix={t("baseRateUnit", lang)}>
-            <TextInput
-              value={String(settings.baseRate)}
-              inputMode="decimal"
+            <NumberInput
+              value={settings.baseRate}
+              lang={lang}
               className="w-28 text-right"
-              onChange={(v) => patch({ settings: { ...settings, baseRate: parseNumber(v) } })}
+              onChange={(baseRate) => patch({ settings: { ...settings, baseRate } })}
             />
           </Field>
           <div className="flex flex-col gap-1">
             <Field label={t("taxRate", lang)} suffix={t("taxRateUnit", lang)}>
-              <TextInput
-                value={String(settings.taxRate)}
-                inputMode="decimal"
+              <NumberInput
+                value={settings.taxRate}
+                lang={lang}
                 className="w-20 text-right"
-                onChange={(v) => patch({ settings: { ...settings, taxRate: parseNumber(v) } })}
+                onChange={(taxRate) => patch({ settings: { ...settings, taxRate } })}
               />
             </Field>
             <span className="text-xs text-muted">{t("taxHelp", lang)}</span>
@@ -126,14 +125,13 @@ export function Tracker() {
       {/* Everything below is correct out of the box for anyone on
           Detaljhandelsavtalet, so it stays folded away by default. */}
       <div className="flex flex-col gap-5">
-        <button
-          type="button"
+        <LinkButton
           onClick={() => setShowAdvanced((v) => !v)}
-          aria-expanded={showAdvanced}
-          className="self-center text-sm text-muted hover:text-foreground underline underline-offset-4 cursor-pointer"
+          expanded={showAdvanced}
+          className="self-center"
         >
           {showAdvanced ? t("hideAdvanced", lang) : t("showAdvanced", lang)}
-        </button>
+        </LinkButton>
 
         {showAdvanced ? (
           <>
@@ -189,7 +187,7 @@ function LanguageToggle({
           type="button"
           onClick={() => onChange(code)}
           aria-pressed={lang === code}
-          className={`px-2.5 py-1.5 uppercase cursor-pointer transition-colors ${
+          className={`inline-flex items-center justify-center min-w-11 min-h-11 px-3 uppercase cursor-pointer transition-colors ${
             lang === code ? "bg-accent text-white" : "text-muted hover:text-foreground"
           }`}
         >

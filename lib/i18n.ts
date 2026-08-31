@@ -154,12 +154,17 @@ const dict = {
   dateLabel: { sv: "Datum", en: "Date" },
   addShift: { sv: "Lägg till pass", en: "Add shift" },
   manualHint: {
-    sv: "Fungerar oavsett var du jobbar. Datumet blir kvar när du lagt till ett pass, så du kan skriva in en hel vecka i rad.",
-    en: "Works wherever you work. The date stays after adding a shift, so a whole week can be entered in a row.",
+    sv: "Fungerar oavsett var du jobbar. Tider kan skrivas som 17:00 eller 1700, och rasten som antal minuter. Datumet blir kvar när du lagt till ett pass, så du kan skriva in en hel vecka i rad.",
+    en: "Works wherever you work. Times can be written as 17:00 or 1700, and the break as a number of minutes. The date stays after adding a shift, so a whole week can be entered in a row.",
   },
+  breakMinutes: { sv: "Rast (min)", en: "Break (min)" },
   manualInvalid: {
-    sv: "Kontrollera datum och tider. Tider skrivs som 17:00.",
-    en: "Check the date and times. Times are written as 17:00.",
+    sv: "Kontrollera datum och tider. Tider kan skrivas som 17:00 eller 1700.",
+    en: "Check the date and times. Times can be written as 17:00 or 1700.",
+  },
+  breakInvalid: {
+    sv: "Kontrollera rasten. Skriv antalet minuter, till exempel 30.",
+    en: "Check the break. Enter the number of minutes, for example 30.",
   },
   pasteHint: {
     sv: "Kopiera schemat från en PDF, ett mejl eller en webbsida och klistra in det här. Varje rad behöver ett datum och två klockslag. En tredje tid tolkas som rast.",

@@ -4,8 +4,7 @@ import type { Totals } from "@/lib/calc";
 import { t } from "@/lib/i18n";
 import { hours, money } from "@/lib/time";
 import type { Language, RuleSet, Settings } from "@/lib/types";
-import { parseNumber } from "@/lib/time";
-import { Section, Stat, TextInput } from "./ui";
+import { NumberInput, Section, Stat } from "./ui";
 
 export function Summary({
   totals,
@@ -71,12 +70,13 @@ export function Summary({
               {semester.length} {t(semester.length === 1 ? "semesterDay" : "semesterDays", lang)}
             </span>
             <span className="flex items-center gap-2">
-              <TextInput
-                value={settings.semesterPayPerDay ? String(settings.semesterPayPerDay) : ""}
-                inputMode="decimal"
+              <NumberInput
+                value={settings.semesterPayPerDay}
+                lang={lang}
+                blankWhenZero
                 placeholder="0"
                 className="w-24 text-right"
-                onChange={(v) => onSemesterPayChange(parseNumber(v))}
+                onChange={onSemesterPayChange}
               />
               <span className="text-sm text-muted">{t("perDay", lang)}</span>
             </span>
@@ -98,12 +98,13 @@ export function Summary({
               {sick.length} {t(sick.length === 1 ? "sickDay" : "sickDays", lang)}
             </span>
             <span className="flex items-center gap-2">
-              <TextInput
-                value={settings.weeklyHours ? String(settings.weeklyHours) : ""}
-                inputMode="decimal"
+              <NumberInput
+                value={settings.weeklyHours}
+                lang={lang}
+                blankWhenZero
                 placeholder="0"
                 className="w-20 text-right"
-                onChange={(v) => onWeeklyHoursChange(parseNumber(v))}
+                onChange={onWeeklyHoursChange}
               />
               <span className="text-sm text-muted">{t("hoursPerWeek", lang)}</span>
             </span>

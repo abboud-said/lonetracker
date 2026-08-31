@@ -1,6 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { formatNumberInput, parseNumberOrNull } from "@/lib/time";
+import type { Language } from "@/lib/types";
 
 export function Section({
   title,
@@ -49,7 +51,34 @@ export function Button({
     <button
       type={type}
       onClick={onClick}
-      className={`border rounded-lg px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer ${styles}`}
+      className={`inline-flex items-center justify-center min-h-11 border rounded-lg px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${styles}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/**
+ * A text button that still meets the 44 px touch minimum, for the quiet
+ * alternatives that read as links rather than buttons.
+ */
+export function LinkButton({
+  children,
+  onClick,
+  expanded,
+  className = "",
+}: {
+  children: ReactNode;
+  onClick: () => void;
+  expanded?: boolean;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={expanded}
+      className={`inline-flex items-center min-h-11 text-sm text-muted hover:text-foreground underline underline-offset-4 cursor-pointer ${className}`}
     >
       {children}
     </button>
@@ -96,7 +125,54 @@ export function TextInput({
       inputMode={inputMode}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
-      className={`bg-background border border-border rounded-lg px-3 py-1.5 text-sm tabular outline-none focus:border-accent ${className}`}
+      className={`bg-background border border-border rounded-lg min-h-11 px-3 py-2 text-sm tabular outline-none focus:border-accent ${className}`}
+    />
+  );
+}
+
+/**
+ * A number field that shows what is being typed rather than what has been
+ * parsed, so a half-finished "177," survives the keystroke that follows it and
+ * an emptied field stays empty instead of snapping to 0. The value is pushed
+ * up as soon as it parses, so the totals still move as you type; the draft is
+ * dropped on blur, which is what puts a rejected entry back to the last good
+ * value.
+ */
+export function NumberInput({
+  value,
+  onChange,
+  lang,
+  className = "",
+  placeholder,
+  blankWhenZero = false,
+  inputMode = "decimal",
+}: {
+  value: number;
+  onChange: (value: number) => void;
+  lang: Language;
+  className?: string;
+  placeholder?: string;
+  blankWhenZero?: boolean;
+  inputMode?: "decimal" | "numeric";
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const committed = blankWhenZero && value === 0 ? "" : formatNumberInput(value, lang);
+
+  return (
+    <input
+      type="text"
+      value={draft ?? committed}
+      inputMode={inputMode}
+      placeholder={placeholder}
+      onChange={(e) => {
+        const next = e.target.value;
+        setDraft(next);
+        const parsed = parseNumberOrNull(next);
+        if (parsed != null) onChange(parsed);
+        else if (next.trim() === "" && blankWhenZero) onChange(0);
+      }}
+      onBlur={() => setDraft(null)}
+      className={`bg-background border border-border rounded-lg min-h-11 px-3 py-2 text-sm tabular outline-none focus:border-accent ${className}`}
     />
   );
 }

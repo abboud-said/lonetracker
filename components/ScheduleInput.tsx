@@ -13,10 +13,10 @@ import {
   type ColumnPreview,
   type ParsedSchedule,
 } from "@/lib/parse";
-import { fromHhmm, weekdayLabel, weekdayOf } from "@/lib/time";
+import { fromHhmm, parseDuration, weekdayLabel, weekdayOf } from "@/lib/time";
 import type { Language, Shift } from "@/lib/types";
 import { newId } from "@/lib/rules";
-import { Button, Section, TextInput } from "./ui";
+import { Button, LinkButton, Section, TextInput } from "./ui";
 
 type Mode = "none" | "manual" | "paste";
 
@@ -142,21 +142,19 @@ export function ScheduleInput({
       ) : null}
 
       {/* Alternatives stay as quiet links — most people will use the file. */}
-      <div className="flex flex-wrap gap-4 text-sm">
-        <button
-          type="button"
+      <div className="flex flex-wrap gap-5">
+        <LinkButton
           onClick={() => setMode(mode === "manual" ? "none" : "manual")}
-          className="text-muted hover:text-foreground underline underline-offset-4 cursor-pointer"
+          expanded={mode === "manual"}
         >
           {t("addManually", lang)}
-        </button>
-        <button
-          type="button"
+        </LinkButton>
+        <LinkButton
           onClick={() => setMode(mode === "paste" ? "none" : "paste")}
-          className="text-muted hover:text-foreground underline underline-offset-4 cursor-pointer"
+          expanded={mode === "paste"}
         >
           {t("pasteInstead", lang)}
-        </button>
+        </LinkButton>
       </div>
 
       {mode === "manual" ? <ManualEntry lang={lang} onAdd={onAddShift} /> : null}
@@ -178,20 +176,29 @@ function ManualEntry({ lang, onAdd }: { lang: Language; onAdd: (shift: Shift) =>
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [brk, setBrk] = useState("");
-  const [problem, setProblem] = useState(false);
+  const [problem, setProblem] = useState<MessageKey | null>(null);
 
   const submit = () => {
     const startMin = fromHhmm(start.trim());
     const rawEnd = fromHhmm(end.trim());
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || startMin == null || rawEnd == null) {
-      setProblem(true);
+      setProblem("manualInvalid");
       return;
     }
+
+    // A break that cannot be read is refused rather than dropped. Treating it
+    // as zero paid out the whole shift and said nothing about it, which is the
+    // one direction a pay figure must never be wrong in.
+    const breakMin = brk.trim() === "" ? 0 : parseDuration(brk.trim());
+    if (breakMin == null) {
+      setProblem("breakInvalid");
+      return;
+    }
+
     const endMin = rawEnd <= startMin ? rawEnd + 1440 : rawEnd;
-    const breakMin = brk.trim() === "" ? 0 : (fromHhmm(brk.trim()) ?? 0);
 
     onAdd({ id: newId(), date, startMin, endMin, breakMin });
-    setProblem(false);
+    setProblem(null);
     // Keep the date so a run of shifts in one week is quick to enter.
     setStart("");
     setEnd("");
@@ -212,30 +219,32 @@ function ManualEntry({ lang, onAdd }: { lang: Language; onAdd: (shift: Shift) =>
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="bg-background border border-border rounded-lg px-2 py-1.5 text-sm tabular outline-none focus:border-accent"
+            className="bg-background border border-border rounded-lg min-h-11 px-2 py-2 text-sm tabular outline-none focus:border-accent"
           />
         </label>
         {(
           [
-            [t("from", lang), start, setStart, "08:00"],
-            [t("to", lang), end, setEnd, "17:00"],
-            [t("breakLabel", lang), brk, setBrk, "00:30"],
+            [t("from", lang), start, setStart, "17:00"],
+            [t("to", lang), end, setEnd, "21:00"],
+            [t("breakMinutes", lang), brk, setBrk, "30"],
           ] as const
         ).map(([label, value, set, placeholder]) => (
           <label key={label} className="flex flex-col gap-1">
             <span className="text-[0.65rem] uppercase tracking-wide text-muted">{label}</span>
+            {/* Not inputMode="numeric": iOS raises a keypad with no colon on it,
+                which made these fields impossible to fill in on an iPhone. */}
             <TextInput
               value={value}
               onChange={set}
               placeholder={placeholder}
-              inputMode="numeric"
-              className="w-[4.75rem]"
+              inputMode="text"
+              className="w-[5rem]"
             />
           </label>
         ))}
         <Button onClick={submit}>{t("addShift", lang)}</Button>
       </div>
-      {problem ? <p className="text-xs text-danger mt-2">{t("manualInvalid", lang)}</p> : null}
+      {problem ? <p className="text-xs text-danger mt-2">{t(problem, lang)}</p> : null}
     </div>
   );
 }
@@ -301,7 +310,7 @@ function ColumnMapper({
       <select
         value={value}
         onChange={(e) => set(e.target.value)}
-        className="bg-background border border-border rounded-lg px-2 py-1.5 text-sm outline-none focus:border-accent max-w-[13rem]"
+        className="bg-background border border-border rounded-lg min-h-11 px-2 py-2 text-sm outline-none focus:border-accent max-w-[13rem]"
       >
         <option value="">{optional ? t("noBreakColumn", lang) : "—"}</option>
         {columns.map((c) => (

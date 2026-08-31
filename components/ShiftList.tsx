@@ -37,7 +37,7 @@ export function ShiftList({
                 type="button"
                 onClick={() => toggle(r.shift.id)}
                 aria-expanded={open}
-                className="w-full flex items-baseline gap-3 py-2.5 text-left cursor-pointer"
+                className="w-full min-h-11 flex items-baseline gap-3 py-3 text-left cursor-pointer"
               >
                 <span className="text-sm font-medium w-28 shrink-0">
                   {dateLabel(r.shift.date, lang)}
@@ -63,7 +63,7 @@ export function ShiftList({
                   <button
                     type="button"
                     onClick={() => onRemove(r.shift.id)}
-                    className="self-start text-xs text-danger underline underline-offset-4 cursor-pointer mb-1"
+                    className="self-start inline-flex items-center min-h-11 text-xs text-danger underline underline-offset-4 cursor-pointer"
                   >
                     {t("removeShift", lang)}
                   </button>
