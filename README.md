@@ -185,3 +185,12 @@ npm run dev
 ```
 
 Then open http://localhost:3000.
+
+## Further reading
+
+- [docs/lonebesked.md](docs/lonebesked.md) — reconciling against a payslip, and
+  why pay being a month in arrears trips this up
+- [docs/skatt.md](docs/skatt.md) — skattetabeller, where the data comes from and
+  how to regenerate it for a new tax year
+- [docs/testing.md](docs/testing.md) — what is proven, what is not, and the
+  browser suite in `e2e/`
