@@ -36,6 +36,13 @@ export type Totals = {
   /** Vacation pay included in the gross. */
   semesterPay: number;
   sick: SickResult;
+  /**
+   * Whether sick.amount is in the gross. It is not until the weekly hours are
+   * known: karensperioden is sized from them, and without it the figure is
+   * the most sjuklön could be, not what it is. An upper bound in the headline
+   * would be wrong in the one direction a pay figure must never be.
+   */
+  sickIncluded: boolean;
   paidMinutes: number;
   perTier: TierMinutes;
   baseAmount: number;
@@ -346,7 +353,8 @@ export function computeTotals(
   const sick = ruleSet
     ? computeSickPay(leave.sick, ruleSet, settings, within)
     : { karensMinutes: 0, paidMinutes: 0, perTier: {}, amount: 0, daysBeyondPeriod: 0 };
-  gross += sick.amount;
+  const sickIncluded = (settings.weeklyHours || 0) > 0;
+  if (sickIncluded) gross += sick.amount;
 
   const tax = taxOf ? (taxOf(gross) ?? 0) : gross * (settings.taxRate / 100);
 
@@ -355,6 +363,7 @@ export function computeTotals(
     leave: visibleLeave,
     semesterPay,
     sick,
+    sickIncluded,
     paidMinutes,
     perTier,
     baseAmount,

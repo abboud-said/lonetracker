@@ -78,6 +78,23 @@ export function Summary({
   // output that moves with the month.
   const effectiveRate = totals.gross > 0 ? (totals.tax / totals.gross) * 100 : 0;
 
+  // Whatever the headline leaves out for want of an input is named beside it.
+  // A total that is silently incomplete is worse than one that is wrong.
+  const excluded: string[] = [];
+  if (sick.length > 0 && !totals.sickIncluded) excluded.push(t("excludesSick", lang));
+  if (semester.length > 0 && totals.semesterPay <= 0) excluded.push(t("excludesSemester", lang));
+  const exclusions =
+    excluded.length > 0 ? (
+      <div className="mt-2 text-xs text-danger max-w-prose">
+        <span>{t("grossExcludes", lang)}</span>
+        <ul className="list-disc pl-5">
+          {excluded.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+      </div>
+    ) : null;
+
   const picker = (
     <MonthPicker months={months} month={month} lang={lang} onChange={onMonthChange} />
   );
@@ -177,7 +194,7 @@ export function Summary({
           </div>
           <p className="text-xs text-muted mt-1.5">{t("sickHint", lang)}</p>
 
-          {settings.weeklyHours > 0 ? (
+          {totals.sickIncluded ? (
             <div className="mt-2 pt-2 border-t border-border flex flex-col gap-1">
               <div className="flex items-baseline justify-between gap-4">
                 <span className="text-sm text-muted">{t("karens", lang)}</span>
@@ -193,8 +210,20 @@ export function Summary({
               </div>
             </div>
           ) : (
-            <p className="text-xs text-danger mt-2">{t("needWeeklyHours", lang)}</p>
+            <div className="mt-2 pt-2 border-t border-border flex flex-col gap-1">
+              <p className="text-xs text-danger">{t("needWeeklyHours", lang)}</p>
+              {/* Shown, so the person can see roughly what is at stake — but
+                  labelled as a ceiling and kept out of the gross. */}
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="text-sm text-muted">{t("sickPayAtMost", lang)}</span>
+                <span className="tabular text-sm text-muted">{money(totals.sick.amount, lang)}</span>
+              </div>
+              <p className="text-xs text-muted">{t("sickNotInGross", lang)}</p>
+              <p className="text-xs text-muted">{t("sickNoAgreedHours", lang)}</p>
+            </div>
           )}
+
+          <p className="text-xs text-muted mt-2">{t("sickUnverified", lang)}</p>
 
           {totals.sick.daysBeyondPeriod > 0 ? (
             <p className="text-xs text-danger mt-2">
@@ -240,6 +269,7 @@ export function Summary({
             </div>
             <p className="text-xs text-muted mt-0.5">{t("netPayout", lang)}</p>
           </div>
+          {exclusions}
 
           <p className="text-xs text-muted mt-3 max-w-prose">{t("taxEstimate", lang)}</p>
         </>
@@ -252,6 +282,7 @@ export function Summary({
             </div>
             <p className="text-xs text-muted mt-0.5">{t("grossPayout", lang)}</p>
           </div>
+          {exclusions}
 
           <p className="text-xs text-muted mt-3 max-w-prose">{t("netNeedsTax", lang)}</p>
         </>

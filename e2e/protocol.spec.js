@@ -481,6 +481,30 @@ test.describe("Phase 6 — leave", () => {
     await expect(page.getByText(/Fyll i timmar per vecka/)).toBeVisible();
   });
 
+  test("P6-08  without weekly hours, sjuklön is shown as a ceiling and kept out of the gross", async ({ page }) => {
+    await setRate(page, 100, 0);
+    await openManual(page);
+    await addShift(page, { date: "2026-08-04", from: "09:00", to: "17:00", brk: "" });   // Tue, worked
+    await page.getByRole("button", { name: "Sjuk", exact: true }).click();
+    await page.locator('input[type="date"]').fill("2026-08-03");                         // Mon, sick
+    await page.locator('label:has(span:text-is("Från")) input').fill("09:00");
+    await page.locator('label:has(span:text-is("Till")) input').fill("17:00");
+    await page.getByRole("button", { name: "Lägg till sjukdag" }).click();
+
+    // 8 h at 100 kr, 80 %, no karens yet: 640 at most — and not in the 800 gross.
+    expect(await kr(page, "Sjuklön högst")).toBe(640);
+    expect(await kr(page, "Bruttolön")).toBe(800);
+    await expect(summary(page)).toContainText("Bruttolönen räknar inte med:");
+
+    // 20 h/week: karensperioden is 4 h, so 4 h are paid at 80 %: 320, now in the gross.
+    const weekly = summary(page).locator('span:text-is("h/vecka")').locator("xpath=preceding-sibling::input");
+    await weekly.fill("20");
+    await weekly.blur();
+    expect(await kr(page, "Sjuklön (80 %)")).toBe(320);
+    expect(await kr(page, "Bruttolön")).toBe(1120);
+    await expect(summary(page)).not.toContainText("Bruttolönen räknar inte med:");
+  });
+
   test("P6-09  a scheduled shift can be marked sick from the list, and back", async ({ page }) => {
     await setRate(page, 100, 0);
     await openManual(page);

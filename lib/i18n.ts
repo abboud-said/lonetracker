@@ -295,6 +295,28 @@ const dict = {
     sv: "Fyll i timmar per vecka för att räkna ut sjuklönen.",
     en: "Enter your weekly hours to calculate sick pay.",
   },
+  sickPayAtMost: { sv: "Sjuklön högst", en: "Sick pay at most" },
+  sickNotInGross: {
+    sv: "Räknas inte in i bruttolönen än. Utan timmar per vecka går karensen inte att dra, och då blir sjuklönen för hög.",
+    en: "Not in the gross pay yet. Without weekly hours the karens period cannot be taken off, which would make sick pay too high.",
+  },
+  sickNoAgreedHours: {
+    sv: "Står det ingen veckotid i ditt anställningsbevis? Då går karensen inte att räkna säkert — fråga din arbetsgivare eller Handels.",
+    en: "No weekly hours in your contract? Then the karens period cannot be worked out reliably — ask your employer or your union.",
+  },
+  sickUnverified: {
+    sv: "Sjuklönen följer §15.4 men har ännu inte stämts av mot ett riktigt lönebesked med sjukdagar. Jämför gärna med ditt.",
+    en: "Sick pay follows §15.4 but has not yet been checked against a real payslip with sick days on it. Compare it with yours.",
+  },
+  grossExcludes: { sv: "Bruttolönen räknar inte med:", en: "Gross pay does not include:" },
+  excludesSick: {
+    sv: "sjuklön — fyll i timmar per vecka",
+    en: "sick pay — enter your weekly hours",
+  },
+  excludesSemester: {
+    sv: "semesterlön — fyll i kr/dag",
+    en: "vacation pay — enter kr/day",
+  },
   beyondSickPeriod: {
     sv: "dagar ligger efter dag 14 — då betalar Försäkringskassan, inte arbetsgivaren. De räknas inte med.",
     en: "days fall past day 14 — Försäkringskassan pays those, not the employer. They are not included.",
