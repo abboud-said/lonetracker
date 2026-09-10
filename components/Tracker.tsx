@@ -3,16 +3,16 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { computeShift, computeTotals } from "@/lib/calc";
 import { t } from "@/lib/i18n";
-import { NO_LEAVE } from "@/lib/parse";
+import { NO_LEAVE, type DayKind, type LeaveDays } from "@/lib/parse";
 import { getServerSnapshot, getSnapshot, setAppState, subscribe } from "@/lib/store";
 import type { AppState } from "@/lib/storage";
 import { ALL_MONTHS, monthsOf } from "@/lib/time";
 import { KOMMUNER, taxFromTable } from "@/lib/skattetabell";
-import type { Language, RuleSet, Settings } from "@/lib/types";
+import type { Language, RuleSet, Settings, Shift } from "@/lib/types";
 import { RuleEditor } from "./RuleEditor";
 import { ShiftList } from "./ShiftList";
 import { Summary } from "./Summary";
-import { ScheduleInput } from "./ScheduleInput";
+import { ScheduleInput, type Replaced } from "./ScheduleInput";
 import { Field, LinkButton, NumberInput, Section } from "./ui";
 
 export function Tracker() {
@@ -45,6 +45,15 @@ export function Tracker() {
     [shifts, month],
   );
 
+  const visibleLeave = useMemo<LeaveDays>(() => {
+    const within = (d: Shift) => month == null || d.date.startsWith(month);
+    return {
+      sick: leave.sick.filter(within),
+      semester: leave.semester.filter(within),
+      other: leave.other.filter(within),
+    };
+  }, [leave, month]);
+
   const results = useMemo(
     () => visibleShifts.map((shift) => computeShift(shift, ruleSet, settings)),
     [visibleShifts, ruleSet, settings],
@@ -76,6 +85,57 @@ export function Tracker() {
 
   const patch = (next: Partial<AppState>) => setAppState((prev) => ({ ...prev, ...next }));
 
+  const leaveTotal = leave.sick.length + leave.semester.length + leave.other.length;
+
+  /**
+   * A date is either worked or it is leave, never both — a sick day typed in
+   * next to the shift it replaced would pay the same hours twice. So adding
+   * one pushes the other out, and the caller is told which.
+   */
+  const addDay = (kind: DayKind, day: Shift): Replaced => {
+    const label = fileName ?? t("addedByHandLabel", lang);
+    const leaveOnDate = (Object.keys(leave) as (keyof LeaveDays)[]).some((k) =>
+      leave[k].some((d) => d.date === day.date),
+    );
+
+    if (kind === "work") {
+      patch({
+        shifts: sortShifts([...shifts, day]),
+        leave: withoutDate(leave, day.date),
+        fileName: label,
+      });
+      return leaveOnDate ? "leave" : null;
+    }
+
+    const workOnDate = shifts.some((s) => s.date === day.date);
+    const cleared = withoutDate(leave, day.date);
+    patch({
+      shifts: shifts.filter((s) => s.date !== day.date),
+      leave: { ...cleared, [kind]: sortShifts([...cleared[kind], day]) },
+      fileName: label,
+    });
+    return workOnDate ? "work" : leaveOnDate ? "leave" : null;
+  };
+
+  const markLeave = (id: string, kind: "sick" | "semester") => {
+    const shift = shifts.find((s) => s.id === id);
+    if (!shift) return;
+    const cleared = withoutDate(leave, shift.date);
+    patch({
+      shifts: shifts.filter((s) => s.id !== id),
+      leave: { ...cleared, [kind]: sortShifts([...cleared[kind], shift]) },
+    });
+  };
+
+  const markWork = (kind: keyof LeaveDays, id: string) => {
+    const day = leave[kind].find((d) => d.id === id);
+    if (!day) return;
+    patch({
+      shifts: sortShifts([...shifts, day]),
+      leave: { ...leave, [kind]: leave[kind].filter((d) => d.id !== id) },
+    });
+  };
+
   return (
     <main className="w-full max-w-3xl mx-auto px-4 py-10 sm:py-14 flex flex-col gap-5">
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -88,7 +148,7 @@ export function Tracker() {
 
       {/* Shown only until a schedule is loaded, so it never becomes clutter for
           someone who already knows what to do. */}
-      {shifts.length === 0 ? (
+      {shifts.length + leaveTotal === 0 ? (
         <section className="bg-accent-soft border border-border rounded-xl p-5 sm:p-6">
           <h2 className="text-base font-semibold tracking-tight mb-3">{t("howToTitle", lang)}</h2>
           <ol className="flex flex-col gap-2.5">
@@ -111,18 +171,12 @@ export function Tracker() {
       <ScheduleInput
         lang={lang}
         shiftCount={shifts.length}
+        leave={leave}
         fileName={fileName}
         onLoaded={(parsed, name) =>
           patch({ shifts: parsed.shifts, leave: parsed.leave, fileName: name })
         }
-        onAddShift={(shift) =>
-          patch({
-            shifts: [...shifts, shift].sort(
-              (a, b) => a.date.localeCompare(b.date) || a.startMin - b.startMin,
-            ),
-            fileName: fileName ?? t("addedByHandLabel", lang),
-          })
-        }
+        onAddDay={addDay}
         onClear={() => patch({ shifts: [], leave: NO_LEAVE(), fileName: null })}
       />
 
@@ -161,9 +215,15 @@ export function Tracker() {
 
       <ShiftList
         results={results}
+        leave={visibleLeave}
         ruleSet={ruleSet}
         lang={lang}
         onRemove={(id) => patch({ shifts: shifts.filter((s) => s.id !== id) })}
+        onRemoveLeave={(kind, id) =>
+          patch({ leave: { ...leave, [kind]: leave[kind].filter((d) => d.id !== id) } })
+        }
+        onMarkLeave={markLeave}
+        onMarkWork={markWork}
       />
 
       {/* Everything below is correct out of the box for anyone on
@@ -414,4 +474,16 @@ function LanguageToggle({
       ))}
     </div>
   );
+}
+
+function sortShifts(days: Shift[]): Shift[] {
+  return [...days].sort((a, b) => a.date.localeCompare(b.date) || a.startMin - b.startMin);
+}
+
+function withoutDate(leave: LeaveDays, date: string): LeaveDays {
+  return {
+    sick: leave.sick.filter((d) => d.date !== date),
+    semester: leave.semester.filter((d) => d.date !== date),
+    other: leave.other.filter((d) => d.date !== date),
+  };
 }

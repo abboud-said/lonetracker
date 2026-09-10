@@ -12,7 +12,10 @@ import {
   ScheduleParseError,
   type ColumnMapping,
   type ColumnPreview,
+  type DayKind,
+  type LeaveDays,
   type ParsedSchedule,
+  type ParsedText,
 } from "@/lib/parse";
 import { fromHhmm, parseDuration, weekdayLabel, weekdayOf } from "@/lib/time";
 import type { Language, Shift } from "@/lib/types";
@@ -20,6 +23,9 @@ import { newId } from "@/lib/rules";
 import { Button, LinkButton, Section, TextInput } from "./ui";
 
 type Mode = "none" | "manual" | "paste";
+
+/** What adding a day pushed out, so the person is told rather than surprised. */
+export type Replaced = "work" | "leave" | null;
 
 /**
  * The three ways a schedule gets in: a file, typed by hand, or pasted as text.
@@ -31,21 +37,38 @@ type Mode = "none" | "manual" | "paste";
 export function ScheduleInput({
   lang,
   shiftCount,
+  leave,
   fileName,
   onLoaded,
-  onAddShift,
+  onAddDay,
   onClear,
 }: {
   lang: Language;
   shiftCount: number;
+  leave: LeaveDays;
   fileName: string | null;
   onLoaded: (parsed: ParsedSchedule, sourceName: string) => void;
-  onAddShift: (shift: Shift) => void;
+  onAddDay: (kind: DayKind, day: Shift) => Replaced;
   onClear: () => void;
 }) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<Mode>("none");
   const [errorKey, setErrorKey] = useState<MessageKey | null>(null);
+  // Lines a paste could not use. Kept after the paste box closes, because the
+  // box closing is exactly when someone looks away from it.
+  const [sickWithoutTimes, setSickWithoutTimes] = useState(0);
+
+  const leaveCount = leave.sick.length + leave.semester.length + leave.other.length;
+  const loaded = shiftCount + leaveCount > 0;
+  const leaveSummary = (
+    [
+      [leave.sick.length, "sickDay", "sickDays"],
+      [leave.semester.length, "semesterDay", "semesterDays"],
+      [leave.other.length, "otherLeaveDay", "otherLeaveDays"],
+    ] as const
+  )
+    .filter(([n]) => n > 0)
+    .map(([n, one, many]) => `${n} ${t(n === 1 ? one : many, lang)}`);
 
   // Rows held back when the headers were not recognised, awaiting a mapping.
   const [pending, setPending] = useState<{
@@ -57,6 +80,7 @@ export function ScheduleInput({
   async function handleFile(file: File) {
     setErrorKey(null);
     setPending(null);
+    setSickWithoutTimes(0);
     try {
       const rows = await readScheduleRows(file);
       try {
@@ -91,9 +115,9 @@ export function ScheduleInput({
       actions={
         <>
           <Button variant="primary" onClick={() => fileInput.current?.click()}>
-            {shiftCount > 0 ? t("replaceFile", lang) : t("chooseFile", lang)}
+            {loaded ? t("replaceFile", lang) : t("chooseFile", lang)}
           </Button>
-          {shiftCount > 0 ? (
+          {loaded ? (
             <Button
               variant="quiet"
               onClick={() => {
@@ -101,6 +125,7 @@ export function ScheduleInput({
                 setErrorKey(null);
                 setPending(null);
                 setMode("none");
+                setSickWithoutTimes(0);
               }}
             >
               {t("clearSchedule", lang)}
@@ -123,11 +148,12 @@ export function ScheduleInput({
 
       {errorKey ? (
         <p className="text-sm text-danger mb-3">{t(errorKey, lang)}</p>
-      ) : shiftCount > 0 ? (
+      ) : loaded ? (
         <p className="text-sm text-muted mb-3">
           {fileName ? <span className="font-medium text-foreground">{fileName}</span> : null}
           {fileName ? " — " : null}
           {shiftCount} {t(shiftCount === 1 ? "shiftsLoadedOne" : "shiftsLoadedMany", lang)}
+          {leaveSummary.map((part) => ` · ${part}`).join("")}
         </p>
       ) : (
         <p className="text-sm text-muted mb-3">{t("noSchedule", lang)}</p>
@@ -165,12 +191,20 @@ export function ScheduleInput({
         </LinkButton>
       </div>
 
-      {mode === "manual" ? <ManualEntry lang={lang} onAdd={onAddShift} /> : null}
+      {sickWithoutTimes > 0 ? (
+        <p className="text-xs text-danger mt-2 max-w-prose">
+          {sickWithoutTimes}{" "}
+          {t(sickWithoutTimes === 1 ? "pasteSickWithoutTimesOne" : "pasteSickWithoutTimes", lang)}
+        </p>
+      ) : null}
+
+      {mode === "manual" ? <ManualEntry lang={lang} onAdd={onAddDay} /> : null}
       {mode === "paste" ? (
         <PasteEntry
           lang={lang}
-          onParsed={(shifts) => {
-            onLoaded({ shifts, leave: { semester: [], sick: [], other: [] } }, t("pasted", lang));
+          onParsed={(parsed) => {
+            onLoaded({ shifts: parsed.shifts, leave: parsed.leave }, t("pasted", lang));
+            setSickWithoutTimes(parsed.sickWithoutTimes);
             setMode("none");
           }}
         />
@@ -179,17 +213,41 @@ export function ScheduleInput({
   );
 }
 
-function ManualEntry({ lang, onAdd }: { lang: Language; onAdd: (shift: Shift) => void }) {
+function ManualEntry({
+  lang,
+  onAdd,
+}: {
+  lang: Language;
+  onAdd: (kind: DayKind, day: Shift) => Replaced;
+}) {
+  const [kind, setKind] = useState<DayKind>("work");
   const [date, setDate] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [brk, setBrk] = useState("");
   const [problem, setProblem] = useState<MessageKey | null>(null);
+  const [replaced, setReplaced] = useState<Replaced>(null);
+
+  const needsTimes = kind !== "semester";
 
   const submit = () => {
+    setReplaced(null);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      setProblem(needsTimes ? "manualInvalid" : "manualDateInvalid");
+      return;
+    }
+
+    // Semesterlön is paid per day, so a semester day carries no hours at all
+    // rather than made-up ones that something could later mistake for work.
+    if (!needsTimes) {
+      setReplaced(onAdd(kind, { id: newId(), date, startMin: 0, endMin: 0, breakMin: 0 }));
+      setProblem(null);
+      return;
+    }
+
     const startMin = fromHhmm(start.trim());
     const rawEnd = fromHhmm(end.trim());
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || startMin == null || rawEnd == null) {
+    if (startMin == null || rawEnd == null) {
       setProblem("manualInvalid");
       return;
     }
@@ -205,7 +263,7 @@ function ManualEntry({ lang, onAdd }: { lang: Language; onAdd: (shift: Shift) =>
 
     const endMin = rawEnd <= startMin ? rawEnd + 1440 : rawEnd;
 
-    onAdd({ id: newId(), date, startMin, endMin, breakMin });
+    setReplaced(onAdd(kind, { id: newId(), date, startMin, endMin, breakMin }));
     setProblem(null);
     // Keep the date so a run of shifts in one week is quick to enter.
     setStart("");
@@ -215,9 +273,55 @@ function ManualEntry({ lang, onAdd }: { lang: Language; onAdd: (shift: Shift) =>
 
   const weekday = /^\d{4}-\d{2}-\d{2}$/.test(date) ? weekdayLabel(weekdayOf(date), lang) : null;
 
+  const hint =
+    kind === "sick"
+      ? t("manualSickHint", lang)
+      : kind === "semester"
+        ? t("manualSemesterHint", lang)
+        : t("manualHint", lang);
+
+  const addLabel =
+    kind === "sick"
+      ? t("addSickDay", lang)
+      : kind === "semester"
+        ? t("addSemesterDay", lang)
+        : t("addShift", lang);
+
   return (
     <div className="mt-4 border border-border rounded-lg p-3.5">
-      <p className="text-xs text-muted mb-3 max-w-prose">{t("manualHint", lang)}</p>
+      {/* Sick and semester days are paid under their own rules, so they are
+          entered as what they are rather than as shifts to be fixed later. */}
+      <div
+        role="group"
+        aria-label={t("dayKind", lang)}
+        className="inline-flex border border-border rounded-lg overflow-hidden text-sm font-medium mb-3"
+      >
+        {(
+          [
+            ["work", "kindWork"],
+            ["sick", "kindSick"],
+            ["semester", "kindSemester"],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={kind === value}
+            onClick={() => {
+              setKind(value);
+              setProblem(null);
+              setReplaced(null);
+            }}
+            className={`inline-flex items-center justify-center min-h-11 px-3.5 cursor-pointer transition-colors ${
+              kind === value ? "bg-accent text-white" : "text-muted hover:text-foreground"
+            }`}
+          >
+            {t(label, lang)}
+          </button>
+        ))}
+      </div>
+
+      <p className="text-xs text-muted mb-3 max-w-prose">{hint}</p>
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1">
           <span className="text-[0.65rem] uppercase tracking-wide text-muted">
@@ -230,29 +334,36 @@ function ManualEntry({ lang, onAdd }: { lang: Language; onAdd: (shift: Shift) =>
             className="bg-background border border-border rounded-lg min-h-11 px-2 py-2 text-sm tabular outline-none focus:border-accent"
           />
         </label>
-        {(
-          [
-            [t("from", lang), start, setStart, "17:00"],
-            [t("to", lang), end, setEnd, "21:00"],
-            [t("breakMinutes", lang), brk, setBrk, "30"],
-          ] as const
-        ).map(([label, value, set, placeholder]) => (
-          <label key={label} className="flex flex-col gap-1">
-            <span className="text-[0.65rem] uppercase tracking-wide text-muted">{label}</span>
-            {/* Not inputMode="numeric": iOS raises a keypad with no colon on it,
-                which made these fields impossible to fill in on an iPhone. */}
-            <TextInput
-              value={value}
-              onChange={set}
-              placeholder={placeholder}
-              inputMode="text"
-              className="w-[5rem]"
-            />
-          </label>
-        ))}
-        <Button onClick={submit}>{t("addShift", lang)}</Button>
+        {needsTimes
+          ? (
+              [
+                [t("from", lang), start, setStart, "17:00"],
+                [t("to", lang), end, setEnd, "21:00"],
+                [t("breakMinutes", lang), brk, setBrk, "30"],
+              ] as const
+            ).map(([label, value, set, placeholder]) => (
+              <label key={label} className="flex flex-col gap-1">
+                <span className="text-[0.65rem] uppercase tracking-wide text-muted">{label}</span>
+                {/* Not inputMode="numeric": iOS raises a keypad with no colon on it,
+                    which made these fields impossible to fill in on an iPhone. */}
+                <TextInput
+                  value={value}
+                  onChange={set}
+                  placeholder={placeholder}
+                  inputMode="text"
+                  className="w-[5rem]"
+                />
+              </label>
+            ))
+          : null}
+        <Button onClick={submit}>{addLabel}</Button>
       </div>
       {problem ? <p className="text-xs text-danger mt-2">{t(problem, lang)}</p> : null}
+      {replaced ? (
+        <p className="text-xs text-muted mt-2 max-w-prose">
+          {t(replaced === "work" ? "replacedWork" : "replacedLeave", lang)}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -262,7 +373,7 @@ function PasteEntry({
   onParsed,
 }: {
   lang: Language;
-  onParsed: (shifts: Shift[]) => void;
+  onParsed: (parsed: ParsedText) => void;
 }) {
   const [text, setText] = useState("");
   const [failed, setFailed] = useState(false);

@@ -359,6 +359,51 @@ test.describe("Phase 4 — hand entry", () => {
     await page.getByRole("button", { name: "Läs in texten" }).click();
     expect(await hoursOf(page, "Arbetade timmar")).toBeCloseTo(7.5, 1);
   });
+
+  test("P4-08  a sick day can be typed in as a sick day, not a shift", async ({ page }) => {
+    await setRate(page, 100, 0);
+    await openManual(page);
+    await page.getByRole("button", { name: "Sjuk", exact: true }).click();
+    await page.locator('input[type="date"]').fill("2026-08-03");
+    await page.locator('label:has(span:text-is("Från")) input').fill("09:00");
+    await page.locator('label:has(span:text-is("Till")) input').fill("17:00");
+    await page.getByRole("button", { name: "Lägg till sjukdag" }).click();
+    await expect(page.getByText(/0 pass inlästa · 1 sjukdag/)).toBeVisible();
+    await expect(summary(page)).toContainText("1 sjukdag");
+    expect(await hoursOf(page, "Arbetade timmar")).toBeCloseTo(0, 1);
+  });
+
+  test("P4-09  a semester day needs a date and nothing else", async ({ page }) => {
+    await openManual(page);
+    await page.getByRole("button", { name: "Semester", exact: true }).click();
+    await expect(page.locator('label:has(span:text-is("Från")) input')).toHaveCount(0);
+    await page.locator('input[type="date"]').fill("2026-08-05");
+    await page.getByRole("button", { name: "Lägg till semesterdag" }).click();
+    await expect(page.getByText(/0 pass inlästa · 1 semesterdag/)).toBeVisible();
+    await expect(shiftsSection(page)).toContainText("Hel dag");
+  });
+
+  test("P4-10  a sick day on a worked date replaces the shift instead of paying twice", async ({ page }) => {
+    await setRate(page, 100, 0);
+    await openManual(page);
+    await addShift(page, { date: "2026-08-03", from: "09:00", to: "17:00", brk: "" });
+    await page.getByRole("button", { name: "Sjuk", exact: true }).click();
+    await page.locator('label:has(span:text-is("Från")) input').fill("09:00");
+    await page.locator('label:has(span:text-is("Till")) input').fill("17:00");
+    await page.getByRole("button", { name: "Lägg till sjukdag" }).click();
+    await expect(page.getByText(/Arbetspasset samma dag togs bort/)).toBeVisible();
+    await expect(page.getByText(/0 pass inlästa · 1 sjukdag/)).toBeVisible();
+  });
+
+  test("P4-11  pasted lines saying sjuk or semester become leave", async ({ page }) => {
+    await page.getByRole("button", { name: "Klistra in text" }).click();
+    await page.locator("textarea").fill(
+      "2026-08-03  09:00-17:00\n2026-08-04  09:00-17:00  sjuk\n2026-08-05  Semester\n2026-08-06  sjuk");
+    await page.getByRole("button", { name: "Läs in texten" }).click();
+    await expect(page.getByText(/1 pass inläst · 1 sjukdag · 1 semesterdag/)).toBeVisible();
+    // The sick line with no times cannot be paid on anything, so it is named, not dropped quietly.
+    await expect(page.getByText(/1 rad med "sjuk" saknade tider/)).toBeVisible();
+  });
 });
 
 // =====================================================================
@@ -434,6 +479,21 @@ test.describe("Phase 6 — leave", () => {
   test("P6-04  sick days without weekly hours prompt rather than mislead", async ({ page }) => {
     await upload(page, "sick-across-months.csv");
     await expect(page.getByText(/Fyll i timmar per vecka/)).toBeVisible();
+  });
+
+  test("P6-09  a scheduled shift can be marked sick from the list, and back", async ({ page }) => {
+    await setRate(page, 100, 0);
+    await openManual(page);
+    await addShift(page, { date: "2026-08-03", from: "09:00", to: "17:00", brk: "" });
+    await shiftsSection(page).getByRole("button", { name: /Mån 3 aug/ }).click();
+    await page.getByRole("button", { name: "Markera som sjukdag" }).click();
+    await expect(summary(page)).toContainText("1 sjukdag");
+    expect(await hoursOf(page, "Arbetade timmar")).toBeCloseTo(0, 1);
+
+    await shiftsSection(page).getByRole("button", { name: /Mån 3 aug/ }).click();
+    await page.getByRole("button", { name: "Ändra till arbetspass" }).click();
+    expect(await hoursOf(page, "Arbetade timmar")).toBeCloseTo(8, 1);
+    await expect(summary(page)).not.toContainText("sjukdag");
   });
 });
 

@@ -212,8 +212,8 @@ const dict = {
     en: "Check the break. Enter the number of minutes, for example 30.",
   },
   pasteHint: {
-    sv: "Kopiera schemat från en PDF, ett mejl eller en webbsida och klistra in det här. Varje rad behöver ett datum och två klockslag. En tredje tid tolkas som rast.",
-    en: "Copy your schedule from a PDF, an email or a web page and paste it here. Each line needs a date and two clock times. A third time is read as a break.",
+    sv: "Kopiera schemat från en PDF, ett mejl eller en webbsida och klistra in det här. Varje rad behöver ett datum och två klockslag. En tredje tid tolkas som rast. Skriv \"sjuk\" eller \"semester\" på raden för de dagarna — en semesterdag behöver inga tider.",
+    en: "Copy your schedule from a PDF, an email or a web page and paste it here. Each line needs a date and two clock times. A third time is read as a break. Write \"sick\" or \"vacation\" on the line for those days — a vacation day needs no times.",
   },
   readText: { sv: "Läs in texten", en: "Read the text" },
   pasteFailed: {
@@ -230,6 +230,45 @@ const dict = {
   noBreakColumn: { sv: "Ingen rastkolumn", en: "No break column" },
   removeShift: { sv: "Ta bort pass", en: "Remove shift" },
   addedByHandLabel: { sv: "Egna pass", en: "Own shifts" },
+
+  // Kinds of day, for hand entry and the list
+  dayKind: { sv: "Typ av dag", en: "Kind of day" },
+  kindWork: { sv: "Arbete", en: "Work" },
+  kindSick: { sv: "Sjuk", en: "Sick" },
+  kindSemester: { sv: "Semester", en: "Vacation" },
+  kindOther: { sv: "Annan frånvaro", en: "Other leave" },
+  addSickDay: { sv: "Lägg till sjukdag", en: "Add sick day" },
+  addSemesterDay: { sv: "Lägg till semesterdag", en: "Add vacation day" },
+  manualSickHint: {
+    sv: "Skriv in passet du skulle ha jobbat enligt schemat. Sjuklönen räknas på de timmarna, med OB (§15.4).",
+    en: "Enter the shift you were scheduled to work. Sick pay is calculated on those hours, OB included (§15.4).",
+  },
+  manualSemesterHint: {
+    sv: "Semesterlön betalas per dag, så inga tider behövs. Skriv bara in datumet.",
+    en: "Vacation pay is paid per day, so no times are needed. Just enter the date.",
+  },
+  manualDateInvalid: { sv: "Välj ett datum.", en: "Choose a date." },
+  replacedWork: {
+    sv: "Arbetspasset samma dag togs bort, eftersom en dag inte kan vara både arbete och frånvaro.",
+    en: "The work shift on that date was removed, since a day cannot be both work and leave.",
+  },
+  replacedLeave: {
+    sv: "Frånvaron samma dag togs bort, eftersom en dag inte kan vara både arbete och frånvaro.",
+    en: "The leave on that date was removed, since a day cannot be both work and leave.",
+  },
+  wholeDay: { sv: "Hel dag", en: "Whole day" },
+  markSick: { sv: "Markera som sjukdag", en: "Mark as sick day" },
+  markSemester: { sv: "Markera som semesterdag", en: "Mark as vacation day" },
+  markWork: { sv: "Ändra till arbetspass", en: "Change to work shift" },
+  removeDay: { sv: "Ta bort dagen", en: "Remove day" },
+  pasteSickWithoutTimesOne: {
+    sv: "rad med \"sjuk\" saknade tider och lästes inte in. Sjuklönen räknas på passet du skulle ha jobbat, så skriv in tiderna.",
+    en: "line marked \"sick\" had no times and was left out. Sick pay is calculated on the shift you would have worked, so add the times.",
+  },
+  pasteSickWithoutTimes: {
+    sv: "rader med \"sjuk\" saknade tider och lästes inte in. Sjuklönen räknas på passet du skulle ha jobbat, så skriv in tiderna.",
+    en: "lines marked \"sick\" had no times and were left out. Sick pay is calculated on the shift you would have worked, so add the times.",
+  },
 
   showAdvanced: { sv: "Visa avancerat", en: "Show advanced" },
   hideAdvanced: { sv: "Dölj avancerat", en: "Hide advanced" },

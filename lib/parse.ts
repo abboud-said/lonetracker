@@ -414,17 +414,41 @@ const DATE_PATTERNS: { re: RegExp; order: "ymd" | "dmy" }[] = [
   { re: /\b(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})\b/, order: "dmy" },
 ];
 
+/** What pasted text turned into, plus the lines that could not be used. */
+export type ParsedText = ParsedSchedule & {
+  /**
+   * Lines that said "sjuk" but carried no times. Sjuklön is 80 % of what the
+   * shift would have paid, so without the shift there is nothing to pay it
+   * on — those lines are left out and counted, rather than guessed at.
+   */
+  sickWithoutTimes: number;
+};
+
+// A pasted roster marks a day off with a word, not a column. Matched at the
+// start of a word so "sjukdag" and "sjukskriven" count, but a longer word that
+// merely contains the letters does not.
+const SICK_WORD = /(^|[^a-zåäö])(sjuk|sick)/i;
+const SEMESTER_WORD = /(^|[^a-zåäö])(semester|vacation)/i;
+
 /**
  * Pull shifts out of whatever text someone pasted in — copied from a PDF, a
  * web roster, an email. Works line by line: a line needs a date and at least
  * two clock times to become a shift.
  *
+ * A line that also says "sjuk" or "semester" becomes that kind of leave
+ * instead of work, so a schedule copied from anywhere can carry the days that
+ * are paid differently. A semester day needs no times, since semesterlön is
+ * paid per day; a sick day does, since sjuklön is paid on the hours the shift
+ * would have had.
+ *
  * Deliberately strict about dates, since a wrong guess about day-versus-month
  * would quietly shift someone's whole month onto the wrong weekdays, and
  * weekday is what decides OB.
  */
-export function parseFreeText(text: string): Shift[] {
+export function parseFreeText(text: string): ParsedText {
   const shifts: Shift[] = [];
+  const leave: LeaveDays = NO_LEAVE();
+  let sickWithoutTimes = 0;
 
   for (const rawLine of text.split(/\r?\n/)) {
     const line = rawLine.trim();
@@ -446,13 +470,23 @@ export function parseFreeText(text: string): Shift[] {
     }
     if (!date) continue;
 
+    const kind = SICK_WORD.test(line) ? "sick" : SEMESTER_WORD.test(line) ? "semester" : "work";
+
     // Strip the date before hunting for times, or "2026-08-03" donates digits.
     const withoutDate = line.replace(/\b\d{4}[-/.]\d{1,2}[-/.]\d{1,2}\b/, " ")
                             .replace(/\b\d{1,2}[-/.]\d{1,2}[-/.]\d{4}\b/, " ");
     const times = Array.from(withoutDate.matchAll(TIME_RE)).map(
       (m) => Number(m[1]) * 60 + Number(m[2]),
     );
-    if (times.length < 2) continue;
+
+    if (times.length < 2) {
+      if (kind === "semester") {
+        leave.semester.push({ id: newId(), date, startMin: 0, endMin: 0, breakMin: 0 });
+      } else if (kind === "sick") {
+        sickWithoutTimes++;
+      }
+      continue;
+    }
 
     const [startMin, first] = times;
     const endMin = first <= startMin ? first + 1440 : first;
@@ -461,12 +495,26 @@ export function parseFreeText(text: string): Shift[] {
     const third = times[2];
     const breakMin = third != null && third > 0 && third <= 180 ? third : 0;
 
-    shifts.push({ id: newId(), date, startMin, endMin, breakMin });
+    const day = { id: newId(), date, startMin, endMin, breakMin };
+    if (kind === "work") shifts.push(day);
+    else leave[kind].push(day);
   }
 
   shifts.sort((a, b) => a.date.localeCompare(b.date) || a.startMin - b.startMin);
-  if (shifts.length === 0) throw new ScheduleParseError("noShifts");
-  return shifts;
+  for (const list of Object.values(leave)) {
+    list.sort((a, b) => a.date.localeCompare(b.date));
+  }
+  const anyLeave = leave.semester.length + leave.sick.length + leave.other.length;
+  if (shifts.length === 0 && anyLeave === 0) throw new ScheduleParseError("noShifts");
+  return { shifts, leave, sickWithoutTimes };
+}
+
+/** Kinds of day a person can enter themselves. "other" only ever comes from a file. */
+export type DayKind = "work" | "sick" | "semester";
+
+/** A semester day entered without times, which is how semesterlön is paid: per day. */
+export function isWholeDay(day: Shift): boolean {
+  return day.endMin <= day.startMin;
 }
 
 /** Read a file into raw rows, so the columns can be re-read with a mapping. */
