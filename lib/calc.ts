@@ -1,6 +1,7 @@
 import { classifyDay, segmentsForDay } from "./rules";
 import { addDays } from "./time";
 import { NO_LEAVE, type LeaveDays } from "./parse";
+import { monthlySemesterersattning } from "./semester";
 import type { RuleSet, Settings, Shift } from "./types";
 
 /** Minutes worked per tier. The empty-string key holds plain base-rate minutes. */
@@ -35,6 +36,8 @@ export type Totals = {
   leave: LeaveDays;
   /** Vacation pay included in the gross. */
   semesterPay: number;
+  /** Semesterersättning paid with the month, when the person gets it that way. */
+  semesterersattning: number;
   sick: SickResult;
   /**
    * Whether sick.amount is in the gross. It is not until the weekly hours are
@@ -342,6 +345,14 @@ export function computeTotals(
     }
   }
 
+  // Semesterersättning is 13 % of the pay for work (§14.8), so it is taken
+  // before semesterlön and sjuklön join the gross — neither is part of the
+  // underlag (§14.6 A).
+  const semesterersattning = settings.semesterersattningMonthly
+    ? monthlySemesterersattning(gross)
+    : 0;
+  gross += semesterersattning;
+
   // Semesterlön is its own line on the payslip and carries no OB, but it is
   // taxed with everything else, so it joins the gross before tax is taken.
   //
@@ -362,6 +373,7 @@ export function computeTotals(
     shifts: results.length,
     leave: visibleLeave,
     semesterPay,
+    semesterersattning,
     sick,
     sickIncluded,
     paidMinutes,

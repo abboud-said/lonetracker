@@ -4,6 +4,7 @@ import type { Totals } from "@/lib/calc";
 import { t } from "@/lib/i18n";
 import { ALL_MONTHS, hours, money, monthLabel } from "@/lib/time";
 import type { Language, RuleSet, Settings } from "@/lib/types";
+import { SemesterEstimate } from "./SemesterEstimate";
 import { NumberInput, Section, Stat } from "./ui";
 
 /**
@@ -67,7 +68,7 @@ export function Summary({
   months: string[];
   month: string | null;
   onMonthChange: (choice: string) => void;
-  onSemesterPayChange: (value: number) => void;
+  onSemesterPayChange: (value: number, estimated: boolean) => void;
   onWeeklyHoursChange: (value: number) => void;
 }) {
   const { semester, sick, other } = totals.leave;
@@ -142,6 +143,13 @@ export function Summary({
             />
           );
         })}
+
+        {totals.semesterersattning > 0 ? (
+          <Stat
+            label={`${t("semesterersattningRow", lang)} · ${t("estimateTag", lang)}`}
+            value={money(totals.semesterersattning, lang)}
+          />
+        ) : null}
       </div>
 
       {/* Each kind of leave is paid under its own rules, so none of them are
@@ -159,15 +167,23 @@ export function Summary({
                 blankWhenZero
                 placeholder="0"
                 className="w-24 text-right"
-                onChange={onSemesterPayChange}
+                onChange={(v) => onSemesterPayChange(v, false)}
               />
               <span className="text-sm text-muted">{t("perDay", lang)}</span>
             </span>
           </div>
           <p className="text-xs text-muted mt-1.5">{t("semesterHint", lang)}</p>
+          <SemesterEstimate
+            lang={lang}
+            date={semester[semester.length - 1].date}
+            onUse={(perDay) => onSemesterPayChange(perDay, true)}
+          />
           {totals.semesterPay > 0 ? (
             <div className="flex items-baseline justify-between gap-4 mt-2 pt-2 border-t border-border">
-              <span className="text-sm">{t("semesterPay", lang)}</span>
+              <span className="text-sm">
+                {t("semesterPay", lang)}
+                {settings.semesterPayEstimated ? ` · ${t("estimateTag", lang)}` : ""}
+              </span>
               <span className="tabular text-sm font-medium">{money(totals.semesterPay, lang)}</span>
             </div>
           ) : null}

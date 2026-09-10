@@ -98,6 +98,17 @@ export type Settings = {
    */
   semesterPayPerDay: number;
   /**
+   * The kr/dag above came from the §14.6 formula rather than a payslip, so it
+   * is shown as an estimate. Typing a figure in clears it.
+   */
+  semesterPayEstimated: boolean;
+  /**
+   * Semesterersättning is paid with every month's pay rather than as paid
+   * days — which some hourly-paid staff see on their payslip. Only the person
+   * can say, so it is asked, not assumed.
+   */
+  semesterersattningMonthly: boolean;
+  /**
    * Agreed average working hours per week, from the anställningsbevis. Only
    * used to size karensperioden, which §15.4 defines as 20 % of it.
    */

@@ -505,6 +505,50 @@ test.describe("Phase 6 — leave", () => {
     await expect(summary(page)).not.toContainText("Bruttolönen räknar inte med:");
   });
 
+  test("P6-10  semesterlön can be estimated from the year's pay (§14.6)", async ({ page }) => {
+    await setRate(page, 100, 0);
+    await openManual(page);
+    await page.getByRole("button", { name: "Semester", exact: true }).click();
+    await page.locator('input[type="date"]').fill("2026-08-05");
+    await page.getByRole("button", { name: "Lägg till semesterdag" }).click();
+    await expect(summary(page)).toContainText("Bruttolönen räknar inte med:");
+
+    await page.getByRole("button", { name: /Räkna ut ungefär/ }).click();
+    await page.locator('label:has(span:text-is("Lön apr–mar")) input').fill("311971");
+    await page.locator('label:has(span:text-is("Timmar apr–mar")) input').fill("1500");
+    // 13 % × 311 971 ÷ 25 = 1 622,25; the guarantee, 1 515 × 1 500 ÷ 1 796 = 1 265,31, is lower.
+    await page.getByRole("button", { name: /Använd 1\s622,25 kr/ }).click();
+    expect(await kr(page, "Semesterlön")).toBe(1622.25);
+    await expect(summary(page)).toContainText("Semesterlön · uppskattning");
+    expect(await kr(page, "Bruttolön")).toBe(1622.25);
+    await expect(summary(page)).not.toContainText("Bruttolönen räknar inte med:");
+  });
+
+  test("P6-11  the guarantee wins when 13 % comes out lower", async ({ page }) => {
+    await openManual(page);
+    await page.getByRole("button", { name: "Semester", exact: true }).click();
+    await page.locator('input[type="date"]').fill("2026-08-05");
+    await page.getByRole("button", { name: "Lägg till semesterdag" }).click();
+    await page.getByRole("button", { name: /Räkna ut ungefär/ }).click();
+    await page.locator('label:has(span:text-is("Lön apr–mar")) input').fill("50000");
+    await page.locator('label:has(span:text-is("Timmar apr–mar")) input').fill("1000");
+    // 13 % gives 260; 1 515 × 1 000 ÷ 1 796 = 843,54 per day.
+    await expect(page.getByRole("button", { name: /Använd 843,54 kr/ })).toBeVisible();
+    await page.getByLabel("Jag har minst 3 års branschvana").check();
+    // 1 790 × 1 000 ÷ 1 796 = 996,66.
+    await expect(page.getByRole("button", { name: /Använd 996,66 kr/ })).toBeVisible();
+  });
+
+  test("P6-12  monthly semesterersättning adds 13 % of the pay for work, only when asked", async ({ page }) => {
+    await setRate(page, 100, 0);
+    await openManual(page);
+    await addShift(page, { date: "2026-08-03", from: "09:00", to: "17:00", brk: "" });
+    expect(await kr(page, "Bruttolön")).toBe(800);
+    await page.getByLabel(/Jag får semesterersättning varje månad/).check();
+    expect(await kr(page, "Semesterersättning 13 %")).toBe(104);
+    expect(await kr(page, "Bruttolön")).toBe(904);
+  });
+
   test("P6-09  a scheduled shift can be marked sick from the list, and back", async ({ page }) => {
     await setRate(page, 100, 0);
     await openManual(page);

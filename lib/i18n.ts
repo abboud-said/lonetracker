@@ -332,6 +332,47 @@ const dict = {
     en: "Vacation days are not paid by the hour, so they do not count as shifts. Enter your vacation pay per day from a payslip to include them.",
   },
 
+  estimateTag: { sv: "uppskattning", en: "estimate" },
+  semesterEstimateOpen: {
+    sv: "Ingen siffra på lönebeskedet? Räkna ut ungefär",
+    en: "No figure on a payslip? Estimate it",
+  },
+  semesterEstimateIntro: {
+    sv: "Semesterlönen är 13 % av lönen du tjänade under intjänandeåret, 1 april–31 mars, fördelad på dina betalda semesterdagar — men aldrig lägre än avtalets garantibelopp (§14.6).",
+    en: "Vacation pay is 13 % of what you earned in the qualifying year, 1 April–31 March, spread over your paid vacation days — but never below the agreement's guaranteed minimum (§14.6).",
+  },
+  semesterUnderlag: { sv: "Lön apr–mar", en: "Pay Apr–Mar" },
+  semesterUnderlagHint: {
+    sv: "Lägg ihop bruttolönen för arbete april–mars, utan semesterlön och sjuklön. Lönen kommer i efterskott, så det är lönebeskeden för maj–april.",
+    en: "Add up gross pay for work April–March, leaving out vacation pay and sick pay. Pay comes a month in arrears, so that is the payslips for May–April.",
+  },
+  semesterPaidDays: { sv: "Betalda dagar", en: "Paid days" },
+  semesterHoursWorked: { sv: "Timmar apr–mar", en: "Hours Apr–Mar" },
+  semesterExperienced: {
+    sv: "Jag har minst 3 års branschvana",
+    en: "I have at least 3 years' experience in the trade",
+  },
+  semesterFromPercent: { sv: "13 % av lönen per dag", en: "13 % of pay, per day" },
+  semesterGuarantee: { sv: "Garantibelopp per dag", en: "Guaranteed minimum per day" },
+  semesterGuaranteeUnknown: {
+    sv: "Fyll i timmarna för att jämföra med garantibeloppet.",
+    en: "Enter the hours to compare against the guaranteed minimum.",
+  },
+  semesterUseEstimate: { sv: "Använd", en: "Use" },
+  semesterEstimateNote: {
+    sv: "En uppskattning enligt avtalet. Står semesterlönen per dag på ett lönebesked är det den siffran som gäller.",
+    en: "An estimate from the agreement. If a payslip shows vacation pay per day, that figure is the one that counts.",
+  },
+  semesterersattningLabel: {
+    sv: "Jag får semesterersättning varje månad",
+    en: "I get holiday compensation with every month's pay",
+  },
+  semesterersattningHint: {
+    sv: "Kryssa bara i om det står semesterersättning på ditt lönebesked varje månad. Då läggs 13 % av månadens lön för arbete till (§14.8). Annars betalas den ut när anställningen slutar, och räknas inte här.",
+    en: "Tick only if your payslip shows holiday compensation every month. Then 13 % of the month's pay for work is added (§14.8). Otherwise it is paid when the job ends, and is not counted here.",
+  },
+  semesterersattningRow: { sv: "Semesterersättning 13 %", en: "Holiday compensation 13 %" },
+
   language: { sv: "Språk", en: "Language" },
 } as const;
 

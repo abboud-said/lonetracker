@@ -196,6 +196,26 @@ export function Tracker() {
             lang={lang}
             onChange={(next) => patch({ settings: { ...settings, ...next } })}
           />
+
+          {/* Asked rather than assumed: whether semesterersättning comes with
+              every month or only when the job ends differs between employers,
+              and the payslip is the only thing that says which. */}
+          <label className="flex items-start gap-2.5 cursor-pointer max-w-prose">
+            <input
+              type="checkbox"
+              checked={settings.semesterersattningMonthly}
+              onChange={(e) =>
+                patch({ settings: { ...settings, semesterersattningMonthly: e.target.checked } })
+              }
+              className="mt-0.5 accent-accent cursor-pointer"
+            />
+            <span>
+              <span className="text-sm font-medium">{t("semesterersattningLabel", lang)}</span>
+              <span className="block text-xs text-muted mt-0.5">
+                {t("semesterersattningHint", lang)}
+              </span>
+            </span>
+          </label>
         </div>
       </Section>
 
@@ -209,7 +229,9 @@ export function Tracker() {
         months={months}
         month={month}
         onMonthChange={setMonthChoice}
-        onSemesterPayChange={(v: number) => patch({ settings: { ...settings, semesterPayPerDay: v } })}
+        onSemesterPayChange={(v: number, estimated: boolean) =>
+          patch({ settings: { ...settings, semesterPayPerDay: v, semesterPayEstimated: estimated } })
+        }
         onWeeklyHoursChange={(v: number) => patch({ settings: { ...settings, weeklyHours: v } })}
       />
 
