@@ -164,7 +164,11 @@ export function Tracker() {
               </li>
             ))}
           </ol>
-          <p className="text-xs text-muted mt-4 max-w-prose">{t("stepNote", lang)}</p>
+          {/* Sick and semester days are entered differently from shifts, and
+              nothing on an empty page shows that they can be — so it is said
+              here, where someone starting out actually reads. */}
+          <p className="text-sm mt-4 max-w-prose">{t("stepLeave", lang)}</p>
+          <p className="text-xs text-muted mt-3 max-w-prose">{t("stepNote", lang)}</p>
         </section>
       ) : null}
 

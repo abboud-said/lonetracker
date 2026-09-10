@@ -6,7 +6,7 @@
 | --- | --- |
 | **OB splitting, breaks, midnight, holidays** | Two real payslips matched to 1,30 kr on gross, every tier exact. See [lonebesked.md](lonebesked.md). |
 | **Tax** | Two real payslips matched **exactly**: 4 630 kr and 5 149 kr. |
-| **Parsers, month filter, leave grouping, layout** | 57 browser cases, all passing. Below. |
+| **Parsers, month filter, leave grouping, layout** | 58 browser cases, all passing. Below. |
 | **Manual entry on a phone** | Confirmed on a real iPhone. |
 | **Sjuklön** | ⚠️ **Nothing.** Built from §15.4 and checked by hand only. No payslip with sick days has ever been run through it. |
 | **Semesterlön estimate, semesterersättning** | ⚠️ **Nothing outside the app.** P6-10 to P6-12 check the §14.6 and §14.8 arithmetic, not a payslip. The one real anchor is 1 622,25 kr/dag on the July payslip; summing the twelve payslips for work April 2025 – March 2026 would test the estimate against it. |

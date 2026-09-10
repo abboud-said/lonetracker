@@ -95,6 +95,12 @@ test.describe("Phase 1 — first run", () => {
     await expect(steps.first()).toContainText("grundlön");
   });
 
+  test("P1-01b  the panel says sick and semester days can be entered, and names no one employer's file", async ({ page }) => {
+    const panel = page.locator("section").filter({ has: page.locator('h2:text-is("Så här gör du")') });
+    await expect(panel).toContainText("Varit sjuk eller haft semester?");
+    await expect(panel).not.toContainText("Attestera tid");
+  });
+
   test("P1-04  the panel goes away once a schedule is loaded, and stays away", async ({ page }) => {
     await upload(page, "one-month.csv");
     await expect(page.locator('h2:text-is("Så här gör du")')).toHaveCount(0);

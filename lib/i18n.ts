@@ -150,8 +150,12 @@ const dict = {
     en: "Choose the municipality you are registered in. Tax is then taken from Skatteverket's tax table, the same way your employer does it. It does not matter if you have no payslip yet — none is needed.",
   },
   step3: {
-    sv: "Ladda upp ditt schema. Det är filen \"Attestera tid\" som du laddar ner från schemasystemet (.xlsx eller .csv).",
-    en: "Upload your schedule — the \"Attestera tid\" file you download from the scheduling system (.xlsx or .csv).",
+    sv: "Lägg in ditt schema: ladda upp filen från ditt schemasystem (.xlsx eller .csv), klistra in schemat som text eller skriv in passen för hand.",
+    en: "Add your schedule: upload the file from your scheduling system (.xlsx or .csv), paste the schedule as text, or enter the shifts by hand.",
+  },
+  stepLeave: {
+    sv: "Varit sjuk eller haft semester? Välj Sjuk eller Semester när du skriver in pass för hand. De dagarna betalas på ett annat sätt än vanliga pass.",
+    en: "Been off sick or on vacation? Choose Sick or Vacation when entering shifts by hand. Those days are paid differently from ordinary shifts.",
   },
   stepNote: {
     sv: "Bruttolönen är den siffra du kan stämma av mot lönebeskedet. Nettolönen är en uppskattning, eftersom riktig skatt räknas efter skattetabell.",
