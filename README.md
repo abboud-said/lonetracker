@@ -40,11 +40,17 @@ and the last one always works:
   date, the start and the end.
 - **Pasted text.** Copy from a PDF, an email or a web roster. Any line with a
   date and two clock times becomes a shift; a third short time is read as a
-  break. Dates are parsed strictly, since guessing day-versus-month would move
-  a whole month onto the wrong weekdays, and weekday is what decides OB.
-- **By hand.** Date, start, end, break. Tedious for a month, but it needs
-  nothing from the employer at all — it works for someone whose schedule only
-  exists on paper.
+  break. A line that also says `sjuk` or `semester` becomes that kind of leave;
+  a semester line needs no times. Dates are parsed strictly, since guessing
+  day-versus-month would move a whole month onto the wrong weekdays, and
+  weekday is what decides OB.
+- **By hand.** Arbete, Sjuk or Semester, then date, start, end, break — a sick
+  day takes the shift that was scheduled, a semester day only the date.
+  Tedious for a month, but it needs nothing from the employer at all — it works
+  for someone whose schedule only exists on paper.
+
+A date is work or leave, never both: adding one removes the other on that date
+and says so. Any shift in the list can be marked sick or semester, and back.
 
 ## The OB rules
 
@@ -108,15 +114,27 @@ A day counts as leave only when the absence columns cover the whole shift;
 those columns routinely carry a minute or two on ordinary days, meaning someone
 arrived late.
 
-- **Semester** — semesterlön comes from average earnings, not the hourly rate,
-  so it cannot be derived. The day count is shown with a field for the daily
-  rate, which is on any payslip that has one ("Semesterlön betald ... a").
+- **Semester** — semesterlön is 13 % of the pay for work in the intjänandeår
+  (1 April – 31 March), shared over the paid days, and never below the
+  garantibelopp pro-rated by hours (§14.6). The daily figure on a payslip
+  ("Semesterlön betald ... a") is the one to use, since the employer's
+  underlag includes semesterlönegrundande frånvaro (§14.7). Without one, the
+  panel estimates it from the year's pay and hours and labels the result an
+  estimate. The mid-year starter's two-step pro-rating (§14.6 B 3) is not
+  modelled. Until a daily figure exists the days are counted, paid nothing, and
+  named beside the gross as left out.
+- **Semesterersättning** — only when the person ticks that their payslip shows
+  it every month: 13 % of the month's pay for work (§14.8), not of semesterlön
+  or sjuklön. Otherwise it is paid when the job ends and is not counted.
 - **Sjukdom** — calculated per §15.4. Sick days are grouped into periods, where
   a fresh spell within five calendar days continues the previous one. Each
   period opens with a karensperiod whose length in hours is 20 % of the agreed
   working week, taken off the front and unpaid; the rest pays 80 % of what the
   hours would have earned, OB included. Days past the fourteenth are
-  Försäkringskassan's and are excluded, with a note.
+  Försäkringskassan's and are excluded, with a note. Without weekly hours the
+  karensperiod cannot be sized, so sjuklön is shown as a ceiling and kept out of
+  the gross until they are entered. Not modelled: the cap of ten karensavdrag in
+  twelve months, and the sjukanmälan and läkarintyg conditions (§15.2–15.3).
 - **Other leave** — counted and shown, never included. Tjänstledighet and the
   rest may not be paid at all and the export does not say which.
 
@@ -147,7 +165,7 @@ browser and the results never leave it.
 
 ## Sources
 
-- [Detaljhandelsavtalet 2025–2027 (PDF)](https://www.handels.se/globalassets/avtalsrorelsen/ag-hang/da110.pdf) — §6.1, §6.5, §7.3, §8.1, §15.1, §15.4
+- [Detaljhandelsavtalet 2025–2027 (PDF)](https://www.handels.se/globalassets/avtalsrorelsen/ag-hang/da110.pdf) — §6.1, §6.5, §7.3, §8.1, §14.6–14.8, §15.1, §15.4
 - [Försäkringskassan: karensavdrag](https://www.forsakringskassan.se/arbetsgivare/sjukdom-och-skada/om-din-medarbetare-blir-sjuk/karensavdrag)
 - [Handels: OB-tillägg](https://www.handels.se/fakta-och-rad/lon-ob/ob-tillagg/)
 - [Handels: När har jag rätt till rast och paus?](https://www.handels.se/fakta-och-rad/faq/g154-naer-har-jag-raett-till-rast-och-paus)

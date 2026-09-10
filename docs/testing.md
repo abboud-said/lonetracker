@@ -6,9 +6,10 @@
 | --- | --- |
 | **OB splitting, breaks, midnight, holidays** | Two real payslips matched to 1,30 kr on gross, every tier exact. See [lonebesked.md](lonebesked.md). |
 | **Tax** | Two real payslips matched **exactly**: 4 630 kr and 5 149 kr. |
-| **Parsers, month filter, leave grouping, layout** | 47 browser cases, all passing. Below. |
+| **Parsers, month filter, leave grouping, layout** | 57 browser cases, all passing. Below. |
 | **Manual entry on a phone** | Confirmed on a real iPhone. |
 | **Sjuklön** | ⚠️ **Nothing.** Built from §15.4 and checked by hand only. No payslip with sick days has ever been run through it. |
+| **Semesterlön estimate, semesterersättning** | ⚠️ **Nothing outside the app.** P6-10 to P6-12 check the §14.6 and §14.8 arithmetic, not a payslip. The one real anchor is 1 622,25 kr/dag on the July payslip; summing the twelve payslips for work April 2025 – March 2026 would test the estimate against it. |
 | **Anyone but the author using it** | ⚠️ **Nothing.** Never handed to a stranger. |
 
 The last two are the honest gaps. Everything else has been checked against
@@ -26,6 +27,8 @@ Still needing a human:
 - **P1-02** — hand the phone to someone who has never seen it, say only "find
   out what you earned last month", then stay quiet.
 - **P6-02** — a sick month against a payslip that has sick days on it.
+- **P6-13** — the semesterlön estimate against a real kr/dag figure: sum the
+  bruttolön for work in one intjänandeår and compare 13 % ÷ 25 with the payslip.
 
 ## The browser suite
 

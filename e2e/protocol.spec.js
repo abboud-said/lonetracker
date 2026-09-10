@@ -645,6 +645,22 @@ test.describe("Phase 10 — language and access", () => {
     }
   });
 
+  test("P10-01b  leave, the sick ceiling and the semester estimate are English too", async ({ page }) => {
+    await page.getByRole("button", { name: "en", exact: true }).click();
+    await page.getByRole("button", { name: "Paste text" }).click();
+    await page.locator("textarea").fill("2026-08-03  09:00-17:00\n2026-08-04  09:00-17:00  sick\n2026-08-05  vacation");
+    await page.getByRole("button", { name: "Read the text" }).click();
+    await page.getByRole("button", { name: /Estimate it/ }).click();
+    await page.getByRole("button", { name: "Enter shifts by hand" }).click();
+    await page.getByRole("button", { name: "Sick", exact: true }).click();
+    const body = await page.locator("main").innerText();
+    for (const word of ["sjukdag", "semesterdag", "Sjuklön högst", "Bruttolönen räknar", "Räkna ut ungefär",
+                        "Lägg till sjukdag", "Hel dag", "Semesterersättning", "uppskattning"]) {
+      expect(body, `found Swedish "${word}" while in English`).not.toContain(word);
+    }
+    await expect(page.getByText("Sick pay at most")).toBeVisible();
+  });
+
   test("P10-02  the html lang attribute follows the chosen language  [F-11]", async ({ page }) => {
     await page.getByRole("button", { name: "en", exact: true }).click();
     const lang = await page.evaluate(() => document.documentElement.lang);
