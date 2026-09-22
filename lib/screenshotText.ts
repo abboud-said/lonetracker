@@ -43,15 +43,27 @@ export type ReadShift = {
   flags: ReadFlag[];
 };
 
+/** A week's own hours total as printed in a month-grid picture, for holding the shifts against. */
+export type WeekTotal = {
+  monday: string;
+  week: number;
+  /** Minutes after breaks, as the picture says. Null when the label carried no total. */
+  pictureMinutes: number | null;
+};
+
 export type ScreenshotRead = {
   shifts: ReadShift[];
   /** Days with a date but fewer than two readable times. Named, never dropped. */
   unread: { date: string | null; source: string }[];
   /** True when no year was found anywhere and today's was used. */
   yearAssumed: boolean;
+  /** Month-grid pictures only: the per-week totals printed in the picture. */
+  weeks?: WeekTotal[];
+  /** Month-grid pictures only: day numbers that read, against the computed dates. */
+  gridCheck?: { matched: number; mismatched: number };
 };
 
-const MONTHS: Record<string, number> = {
+export const MONTHS: Record<string, number> = {
   jan: 1, feb: 2, mar: 3, apr: 4, maj: 5, may: 5, jun: 6,
   jul: 7, aug: 8, sep: 9, okt: 10, oct: 10, nov: 11, dec: 12,
 };

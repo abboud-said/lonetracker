@@ -42,8 +42,19 @@ and the last one always works:
   removed, a day with a date but no readable times is listed rather than
   dropped, and a year missing from the picture is assumed and said so. A
   weekday name in the picture is checked against the date and a mismatch
-  flagged. Light and dark mode both work. What trips it up: times without
-  minutes (`kl 9–17`), and tables where a whole week sits in columns.
+  flagged. Light and dark mode both work.
+
+  A **month calendar** — seven weekday columns, a row per week, start and end
+  stacked in each cell, the way scheduling apps show "my month" — is read by
+  position rather than line by line: the weekday letters across the top give
+  the columns, the `W. 27` labels down the side give each row's Monday, and a
+  time belongs to the cell it sits in. The grey day numbers rarely survive
+  OCR, so they are not relied on; those that do read are checked against the
+  computed dates. Such a picture never shows breaks, so every shift over five
+  hours is flagged and one field sets a break on all of them. The week
+  totals the app prints (`W. 27 - 22:15`, hours after breaks) are shown
+  against the rows, so the breaks can be set until the two agree. What still
+  trips it up: times without minutes (`kl 9–17`).
 - **A file.** `.csv` or `.xlsx`. Columns are found by their headings, in
   Swedish or English. If the headings are unfamiliar the file is not rejected —
   the columns are listed with sample values and you point out which is the
@@ -164,9 +175,10 @@ arrived late.
 
 Checked against two real Bestseller time exports and the payslips they
 produced. June and July both land within 1.30 kr on the month, with every OB
-tier exact. The screenshot route has been checked only against screenshots
-rendered for the purpose, in three layouts, light and dark — not yet against a
-picture taken of a real scheduling app on a real phone. The sjuklön path has no payslip behind it yet — it is built from
+tier exact. The screenshot route has been checked against screenshots rendered
+for the purpose, in three layouts, light and dark, and against one real
+"My month" screenshot from a scheduling app, where all 19 shifts across three
+months read correctly. The sjuklön path has no payslip behind it yet — it is built from
 §15.4 and verified against hand calculation, not against money actually
 received.
 
@@ -214,8 +226,9 @@ lib/
   holidays.ts        svenska helgdagar, incl. Easter-derived dates
   calc.ts            shift splitting and pay totals
   parse.ts           csv + xlsx readers, schedule column detection, pasted text
-  screenshot.ts      image preparation and on-device OCR
+  screenshot.ts      image preparation and on-device OCR, words with positions
   screenshotText.ts  OCR text into shifts: dates, times, breaks, weekday check
+  screenshotGrid.ts  month-calendar pictures read by position, week totals
   storage.ts         localStorage load/save
   store.ts           useSyncExternalStore bindings
   i18n.ts            sv/en strings

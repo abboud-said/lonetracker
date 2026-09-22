@@ -13,12 +13,23 @@
  */
 
 import type Tesseract from "tesseract.js";
+import type { OcrWord } from "./screenshotGrid";
 
 export type OcrProgress = {
   /** Fetching and starting the engine, then reading the picture. */
   stage: "engine" | "reading";
   /** 0–1 within the stage. */
   progress: number;
+};
+
+export type OcrResult = {
+  /** The page as text, top to bottom. */
+  text: string;
+  /** Every word with where it sits on the prepared picture, for grid layouts. */
+  words: OcrWord[];
+  /** Size of the prepared picture the word boxes refer to. */
+  width: number;
+  height: number;
 };
 
 export type ScreenshotErrorCode = "image" | "engine";
@@ -133,11 +144,11 @@ function prepare(img: HTMLImageElement): HTMLCanvasElement {
   return canvas;
 }
 
-/** The text in a screenshot, top to bottom. Throws ScreenshotError. */
+/** The text in a screenshot, with each word's position. Throws ScreenshotError. */
 export async function recognizeScreenshot(
   file: File,
   onProgress: (p: OcrProgress) => void,
-): Promise<string> {
+): Promise<OcrResult> {
   listeners.add(onProgress);
   try {
     onProgress({ stage: "engine", progress: 0 });
@@ -145,8 +156,25 @@ export async function recognizeScreenshot(
     const canvas = prepare(img);
     const worker = await getWorker();
     onProgress({ stage: "reading", progress: 0 });
-    const { data } = await worker.recognize(canvas, {}, { text: true });
-    return data.text ?? "";
+    const { data } = await worker.recognize(canvas, {}, { text: true, blocks: true });
+    const words: OcrWord[] = [];
+    for (const block of data.blocks ?? []) {
+      for (const para of block.paragraphs) {
+        for (const line of para.lines) {
+          for (const w of line.words) {
+            words.push({
+              text: w.text,
+              conf: w.confidence,
+              x0: w.bbox.x0,
+              y0: w.bbox.y0,
+              x1: w.bbox.x1,
+              y1: w.bbox.y1,
+            });
+          }
+        }
+      }
+    }
+    return { text: data.text ?? "", words, width: canvas.width, height: canvas.height };
   } catch (err) {
     if (err instanceof ScreenshotError) throw err;
     throw new ScreenshotError("engine", err);

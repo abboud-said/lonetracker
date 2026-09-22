@@ -21,6 +21,7 @@ import { fromHhmm, parseDuration, weekdayLabel, weekdayOf } from "@/lib/time";
 import type { Language, Shift } from "@/lib/types";
 import { newId } from "@/lib/rules";
 import { recognizeScreenshot, ScreenshotError, type OcrProgress } from "@/lib/screenshot";
+import { readScheduleGrid } from "@/lib/screenshotGrid";
 import { readScheduleText, type ScreenshotRead } from "@/lib/screenshotText";
 import { ScreenshotReview } from "./ScreenshotReview";
 import { Button, LinkButton, Section, TextInput } from "./ui";
@@ -109,8 +110,11 @@ export function ScheduleInput({
     setMode("none");
     setOcr({ stage: "engine", progress: 0 });
     try {
-      const text = await recognizeScreenshot(file, setOcr);
-      const read = readScheduleText(text, todayIso());
+      const ocr = await recognizeScreenshot(file, setOcr);
+      const today = todayIso();
+      // A month calendar has to be read by position; anything else, line by line.
+      const read = readScheduleGrid(ocr.words, ocr, today) ?? readScheduleText(ocr.text, today);
+      const text = ocr.text;
       // Never loaded straight in. What OCR read is shown against the picture
       // first, even when it looks complete — especially then.
       setReview({ read, text, imageUrl: URL.createObjectURL(file), name: file.name });

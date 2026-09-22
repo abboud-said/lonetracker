@@ -579,7 +579,7 @@ test.describe("Phase 7 — screenshots", () => {
 
   const reviewPanel = (page) =>
     page.locator("div").filter({ has: page.locator('h3:text-is("Kontrollera passen")') }).first();
-  const reviewRows = (page) => reviewPanel(page).locator("li");
+  const reviewRows = (page) => reviewPanel(page).getByTestId("review-rows").locator("li");
 
   async function readScreenshot(page, file) {
     await page.getByTestId("screenshot-input").setInputFiles(FIX(file));
@@ -647,6 +647,31 @@ test.describe("Phase 7 — screenshots", () => {
     await page.getByRole("button", { name: "Använd passen" }).click();
     await expect(page.getByText("4 pass inlästa")).toBeVisible();
     expect(await kr(page, "Bruttolön")).toBeCloseTo(5868.83 + 177.44, 2);
+  });
+
+  test("P7-08  a real month-grid screenshot: every cell read by position, week totals shown", async ({ page }) => {
+    // A real "My month" screenshot from a scheduling app: seven columns, a row
+    // per week, start and end stacked in each cell, grey day numbers OCR
+    // mostly cannot read. 19 shifts across June, July and August 2026.
+    await readScreenshot(page, "screenshot-month-grid.png");
+    const values = await rowValues(page);
+    expect(values.length).toBe(19);
+    expect(values[0]).toEqual(["2026-06-30", "12:00", "16:00", ""]);
+    expect(values[9]).toEqual(["2026-07-17", "14:00", "19:10", ""]);
+    expect(values[18]).toEqual(["2026-08-02", "12:00", "20:00", ""]);
+    // The picture's own weekly totals are shown against the rows.
+    const check = page.getByTestId("week-check");
+    await expect(check).toContainText("v.27");
+    await expect(check).toContainText("22:15");
+    // The grid never shows breaks, so long shifts are asked about, and one
+    // field sets them all.
+    await expect(reviewPanel(page).getByText("Över 5 timmar och ingen rast lästes").first()).toBeVisible();
+    await reviewPanel(page).locator('label:has-text("Rast på alla pass över 5 h") input').fill("45");
+    await page.getByRole("button", { name: "Sätt" }).click();
+    expect((await rowValues(page))[2]).toEqual(["2026-07-04", "12:00", "20:00", "45"]);
+    expect((await rowValues(page))[0]).toEqual(["2026-06-30", "12:00", "16:00", ""]);
+    await page.getByRole("button", { name: "Använd passen" }).click();
+    await expect(page.getByText("19 pass inlästa")).toBeVisible();
   });
 
   test("P7-07  a time that cannot be read is refused, not loaded as nothing", async ({ page }) => {

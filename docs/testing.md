@@ -6,8 +6,9 @@
 | --- | --- |
 | **OB splitting, breaks, midnight, holidays** | Two real payslips matched to 1,30 kr on gross, every tier exact. See [lonebesked.md](lonebesked.md). |
 | **Tax** | Two real payslips matched **exactly**: 4 630 kr and 5 149 kr. |
-| **Parsers, month filter, leave grouping, layout** | 65 browser cases, all passing. Below. |
-| **Screenshot reading** | ⚠️ **Rendered fixtures only.** Four synthetic phone screens in `e2e/fixtures/screenshot-*.png` — light, dark, weekday-above-date, and one with no schedule — read exactly, and the money comes out identical to the CSV of the same shifts. No screenshot from a real scheduling app on a real phone has been through it yet. |
+| **Parsers, month filter, leave grouping, layout** | 66 browser cases, all passing. Below. |
+| **Screenshot reading, list layouts** | ⚠️ **Rendered fixtures only.** Four synthetic phone screens in `e2e/fixtures/screenshot-*.png` — light, dark, weekday-above-date, and one with no schedule — read exactly, and the money comes out identical to the CSV of the same shifts. |
+| **Screenshot reading, month grid** | One real "My month" screenshot from a scheduling app (`screenshot-month-grid.png`): all 19 shifts across June–August 2026 read to the minute, the four day numbers OCR could read agree with the computed dates, and the five week totals in the picture are picked up. Breaks are not in such a picture, so they still have to be set by hand — the week totals are the check. |
 | **Manual entry on a phone** | Confirmed on a real iPhone. |
 | **Sjuklön** | ⚠️ **Nothing.** Built from §15.4 and checked by hand only. No payslip with sick days has ever been run through it. |
 | **Semesterlön estimate, semesterersättning** | ⚠️ **Nothing outside the app.** P6-10 to P6-12 check the §14.6 and §14.8 arithmetic, not a payslip. The one real anchor is 1 622,25 kr/dag on the July payslip; summing the twelve payslips for work April 2025 – March 2026 would test the estimate against it. |
@@ -30,9 +31,11 @@ Still needing a human:
 - **P6-02** — a sick month against a payslip that has sick days on it.
 - **P6-13** — the semesterlön estimate against a real kr/dag figure: sum the
   bruttolön for work in one intjänandeår and compare 13 % ÷ 25 with the payslip.
-- **P7-08** — a real screenshot: open the schedule in the scheduling app on a
-  phone, screenshot it, read it in, and hold the review table against the
-  picture. Then the same on the phone's dark theme. Note what it got wrong.
+- **P7-09** — the month grid on a phone's dark theme, and a month where a
+  cell holds two shifts. Note what it gets wrong.
+- **P7-10** — a month grid against its payslip: set the breaks until every
+  week matches the picture's total, then hold the gross against the
+  lönebesked for that month (paid the month after — see lonebesked.md).
 
 ## The browser suite
 

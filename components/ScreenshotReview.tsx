@@ -60,6 +60,45 @@ export function ScreenshotReview({
   const [invalid, setInvalid] = useState<Set<string>>(new Set());
   const [showText, setShowText] = useState(false);
   const [showImage, setShowImage] = useState(false);
+  const [bulkBreak, setBulkBreak] = useState("30");
+
+  /** Clock span of a row in minutes, or null while its times do not parse. */
+  const spanOf = (r: Row): number | null => {
+    if (r.kind === "semester") return null;
+    const a = fromHhmm(r.start);
+    const b = fromHhmm(r.end);
+    if (a == null || b == null) return null;
+    return b <= a ? b + 1440 - a : b - a;
+  };
+  const longWithoutBreak = rows.filter((r) => r.brk.trim() === "" && (spanOf(r) ?? 0) > 5 * 60);
+
+  // A month grid never shows breaks, so setting one on every long shift at
+  // once beats typing it twenty times. Rows that already have one are left.
+  const applyBulkBreak = () => {
+    const v = parseDuration(bulkBreak.trim());
+    if (v == null) return;
+    setRows((rs) =>
+      rs.map((r) => (r.brk.trim() === "" && (spanOf(r) ?? 0) > 5 * 60 ? { ...r, brk: String(v) } : r)),
+    );
+  };
+
+  /** Work minutes after break for the rows in a week, the way the picture's own total counts them. */
+  const weekMinutes = (monday: string): number => {
+    const [y, m, d] = monday.split("-").map(Number);
+    const end = new Date(y, m - 1, d + 6);
+    const last =
+      end.getFullYear() + "-" + String(end.getMonth() + 1).padStart(2, "0") + "-" + String(end.getDate()).padStart(2, "0");
+    let sum = 0;
+    for (const r of rows) {
+      if (r.kind !== "work" || r.date < monday || r.date > last) continue;
+      const span = spanOf(r);
+      if (span == null) continue;
+      const brk = r.brk.trim() === "" ? 0 : (parseDuration(r.brk) ?? 0);
+      sum += Math.max(0, span - brk);
+    }
+    return sum;
+  };
+  const hm = (min: number) => `${Math.floor(min / 60)}:${String(min % 60).padStart(2, "0")}`;
 
   // The picture is shown from an object URL that the caller owns; it is
   // revoked when this panel goes away.
@@ -117,11 +156,25 @@ export function ScreenshotReview({
         </p>
       ) : null}
 
+      {read.gridCheck && read.gridCheck.mismatched > 0 ? (
+        <p className="text-xs text-danger mb-3 max-w-prose">{t("gridDayMismatch", lang)}</p>
+      ) : null}
+
       {rows.length === 0 ? (
         <p className="text-sm text-danger mb-3 max-w-prose">{t("reviewNone", lang)}</p>
       ) : null}
 
-      <ul className="flex flex-col gap-2.5">
+      {longWithoutBreak.length > 0 ? (
+        <div className="flex flex-wrap items-end gap-3 mb-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-[0.65rem] uppercase tracking-wide text-muted">{t("bulkBreakLabel", lang)}</span>
+            <TextInput value={bulkBreak} onChange={setBulkBreak} placeholder="30" inputMode="text" className="w-[5rem]" />
+          </label>
+          <Button onClick={applyBulkBreak}>{t("bulkBreakApply", lang)}</Button>
+        </div>
+      ) : null}
+
+      <ul className="flex flex-col gap-2.5" data-testid="review-rows">
         {rows.map((r) => {
           const bad = invalid.has(r.id);
           return (
@@ -202,6 +255,29 @@ export function ScreenshotReview({
                 {u.source}
               </li>
             ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {read.weeks && read.weeks.length > 0 ? (
+        <div className="mt-3 rounded-lg border border-border bg-surface px-3.5 py-3">
+          <h4 className="text-sm font-semibold">{t("weekCheckTitle", lang)}</h4>
+          <p className="text-xs text-muted mt-1 mb-2 max-w-prose">{t("weekCheckHint", lang)}</p>
+          <ul className="flex flex-col gap-1 text-sm tabular" data-testid="week-check">
+            {read.weeks.map((w) => {
+              const ours = weekMinutes(w.monday);
+              const same = w.pictureMinutes != null && w.pictureMinutes === ours;
+              return (
+                <li key={w.monday} className="flex flex-wrap justify-between gap-x-4">
+                  <span>v.{w.week}</span>
+                  <span className={w.pictureMinutes != null && !same ? "text-danger" : ""}>
+                    {t("weekPicture", lang)} {w.pictureMinutes == null ? "—" : hm(w.pictureMinutes)} · {t("weekRows", lang)}{" "}
+                    {hm(ours)}
+                    {same ? " ✓" : ""}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </div>
       ) : null}

@@ -75,6 +75,22 @@ const dict = {
     sv: "Kontrollera de markerade raderna: datum som ÅÅÅÅ-MM-DD, tider som 17:00, rast i minuter.",
     en: "Check the marked rows: date as YYYY-MM-DD, times as 17:00, break in minutes.",
   },
+  bulkBreakLabel: {
+    sv: "Rast på alla pass över 5 h som saknar rast (min)",
+    en: "Break on every shift over 5 h that has none (min)",
+  },
+  bulkBreakApply: { sv: "Sätt", en: "Set" },
+  weekCheckTitle: { sv: "Veckans timmar enligt bilden", en: "The week's hours as the picture says" },
+  weekCheckHint: {
+    sv: "Bilden anger timmar per vecka efter rast. När passen och rasterna stämmer ska siffrorna bli lika.",
+    en: "The picture gives hours per week after breaks. Once the shifts and breaks are right the figures should match.",
+  },
+  weekPicture: { sv: "bilden", en: "picture" },
+  weekRows: { sv: "passen", en: "shifts" },
+  gridDayMismatch: {
+    sv: "Några dagnummer i bilden stämmer inte med datumen här. Kontrollera datumen extra noga.",
+    en: "Some day numbers in the picture do not match the dates here. Check the dates with extra care.",
+  },
   reviewShowText: { sv: "Visa den avlästa texten", en: "Show the text that was read" },
   reviewHideText: { sv: "Dölj den avlästa texten", en: "Hide the text that was read" },
   reviewShowImage: { sv: "Visa bilden", en: "Show the picture" },
