@@ -20,9 +20,24 @@ import {
 import { fromHhmm, parseDuration, weekdayLabel, weekdayOf } from "@/lib/time";
 import type { Language, Shift } from "@/lib/types";
 import { newId } from "@/lib/rules";
+import { recognizeScreenshot, ScreenshotError, type OcrProgress } from "@/lib/screenshot";
+import { readScheduleText, type ScreenshotRead } from "@/lib/screenshotText";
+import { ScreenshotReview } from "./ScreenshotReview";
 import { Button, LinkButton, Section, TextInput } from "./ui";
 
 type Mode = "none" | "manual" | "paste";
+
+/** Today as YYYY-MM-DD in local time, for the year a screenshot leaves out. */
+function todayIso(): string {
+  const d = new Date();
+  return (
+    d.getFullYear() +
+    "-" +
+    String(d.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(d.getDate()).padStart(2, "0")
+  );
+}
 
 /** What adding a day pushed out, so the person is told rather than surprised. */
 export type Replaced = "work" | "leave" | null;
@@ -52,8 +67,17 @@ export function ScheduleInput({
   onClear: () => void;
 }) {
   const fileInput = useRef<HTMLInputElement>(null);
+  const imageInput = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<Mode>("none");
   const [errorKey, setErrorKey] = useState<MessageKey | null>(null);
+  // A screenshot being read, then what it was read as, awaiting a check.
+  const [ocr, setOcr] = useState<OcrProgress | null>(null);
+  const [review, setReview] = useState<{
+    read: ScreenshotRead;
+    text: string;
+    imageUrl: string;
+    name: string;
+  } | null>(null);
   // Lines a paste could not use. Kept after the paste box closes, because the
   // box closing is exactly when someone looks away from it.
   const [sickWithoutTimes, setSickWithoutTimes] = useState(0);
@@ -77,9 +101,31 @@ export function ScheduleInput({
     name: string;
   } | null>(null);
 
-  async function handleFile(file: File) {
+  async function handleImage(file: File) {
     setErrorKey(null);
     setPending(null);
+    setReview(null);
+    setSickWithoutTimes(0);
+    setMode("none");
+    setOcr({ stage: "engine", progress: 0 });
+    try {
+      const text = await recognizeScreenshot(file, setOcr);
+      const read = readScheduleText(text, todayIso());
+      // Never loaded straight in. What OCR read is shown against the picture
+      // first, even when it looks complete — especially then.
+      setReview({ read, text, imageUrl: URL.createObjectURL(file), name: file.name });
+    } catch (err) {
+      setErrorKey(err instanceof ScreenshotError && err.code === "image" ? "errImage" : "errOcrEngine");
+    } finally {
+      setOcr(null);
+    }
+  }
+
+  async function handleFile(file: File) {
+    if (file.type.startsWith("image/")) return handleImage(file);
+    setErrorKey(null);
+    setPending(null);
+    setReview(null);
     setSickWithoutTimes(0);
     try {
       const rows = await readScheduleRows(file);
@@ -117,6 +163,7 @@ export function ScheduleInput({
           <Button variant="primary" onClick={() => fileInput.current?.click()}>
             {loaded ? t("replaceFile", lang) : t("chooseFile", lang)}
           </Button>
+          <Button onClick={() => imageInput.current?.click()}>{t("screenshotButton", lang)}</Button>
           {loaded ? (
             <Button
               variant="quiet"
@@ -124,6 +171,7 @@ export function ScheduleInput({
                 onClear();
                 setErrorKey(null);
                 setPending(null);
+                setReview(null);
                 setMode("none");
                 setSickWithoutTimes(0);
               }}
@@ -145,6 +193,29 @@ export function ScheduleInput({
           e.target.value = "";
         }}
       />
+      {/* A separate input so a phone opens its photo picker, where the
+          screenshot actually is, rather than a file browser. */}
+      <input
+        ref={imageInput}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        data-testid="screenshot-input"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void handleImage(file);
+          e.target.value = "";
+        }}
+      />
+
+      {ocr ? (
+        <p className="text-sm text-muted mb-3 max-w-prose" role="status" aria-live="polite">
+          {ocr.stage === "engine"
+            ? t("ocrEngine", lang)
+            : `${t("ocrReading", lang)} … ${Math.round(ocr.progress * 100)} %`}
+          <span className="block text-xs mt-1">{t("ocrPrivacy", lang)}</span>
+        </p>
+      ) : null}
 
       {errorKey ? (
         <p className="text-sm text-danger mb-3">{t(errorKey, lang)}</p>
@@ -158,6 +229,21 @@ export function ScheduleInput({
       ) : (
         <p className="text-sm text-muted mb-3">{t("noSchedule", lang)}</p>
       )}
+
+      {review ? (
+        <ScreenshotReview
+          key={review.imageUrl}
+          read={review.read}
+          text={review.text}
+          imageUrl={review.imageUrl}
+          lang={lang}
+          onCancel={() => setReview(null)}
+          onConfirm={(parsed) => {
+            onLoaded(parsed, review.name);
+            setReview(null);
+          }}
+        />
+      ) : null}
 
       {pending ? (
         <ColumnMapper

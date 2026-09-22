@@ -47,7 +47,8 @@ const baseRateInput = (page) => page.locator('label:has(span:text-is("Grundlön"
 const taxInput = (page) => page.locator('label:has(span:text-is("Skatt")) input');
 
 async function upload(page, file) {
-  await page.locator('input[type="file"]').setInputFiles(FIX(file));
+  // Two file inputs exist now — the second is for screenshots.
+  await page.locator('input[type="file"]').first().setInputFiles(FIX(file));
 }
 
 async function openManual(page) {
@@ -568,6 +569,92 @@ test.describe("Phase 6 — leave", () => {
     await page.getByRole("button", { name: "Ändra till arbetspass" }).click();
     expect(await hoursOf(page, "Arbetade timmar")).toBeCloseTo(8, 1);
     await expect(summary(page)).not.toContainText("sjukdag");
+  });
+});
+
+// =====================================================================
+test.describe("Phase 7 — screenshots", () => {
+  // Reading a picture takes a few seconds, plus the engine on first use.
+  test.describe.configure({ timeout: 120000 });
+
+  const reviewPanel = (page) =>
+    page.locator("div").filter({ has: page.locator('h3:text-is("Kontrollera passen")') }).first();
+  const reviewRows = (page) => reviewPanel(page).locator("li");
+
+  async function readScreenshot(page, file) {
+    await page.getByTestId("screenshot-input").setInputFiles(FIX(file));
+    await expect(page.locator('h3:text-is("Kontrollera passen")')).toBeVisible({ timeout: 90000 });
+  }
+
+  /** Every row's inputs — date, from, to, break — as the person would see them. */
+  async function rowValues(page) {
+    return reviewRows(page).evaluateAll((lis) =>
+      lis.map((li) => Array.from(li.querySelectorAll("input")).map((i) => i.value)),
+    );
+  }
+
+  const AUGUST = [
+    ["2026-08-03", "09:00", "17:00", "30"],
+    ["2026-08-04", "17:00", "21:00", ""],
+    ["2026-08-08", "10:00", "16:00", "30"],
+    ["2026-08-09", "11:00", "17:00", "30"],
+  ];
+
+  test("P7-01  a screenshot is read into a review, never straight into the schedule", async ({ page }) => {
+    await readScreenshot(page, "screenshot-light.png");
+    // Nothing is loaded yet — the person has not looked at it.
+    await expect(page.getByText("Inget schema uppladdat än.")).toBeVisible();
+    expect(await rowValues(page)).toEqual(AUGUST);
+    await page.getByRole("button", { name: "Använd passen" }).click();
+    await expect(page.getByText("4 pass inlästa")).toBeVisible();
+    // The same four shifts as one-month.csv, so the same money.
+    expect(await kr(page, "Bruttolön")).toBeCloseTo(5868.83, 2);
+  });
+
+  test("P7-02  a dark-mode screenshot reads the same", async ({ page }) => {
+    await readScreenshot(page, "screenshot-dark.png");
+    expect(await rowValues(page)).toEqual(AUGUST);
+  });
+
+  test("P7-03  weekday above the date, in capitals, with the year on the line", async ({ page }) => {
+    await readScreenshot(page, "screenshot-stacked.png");
+    expect(await rowValues(page)).toEqual(AUGUST);
+  });
+
+  test("P7-04  a picture with no schedule in it says so and loads nothing", async ({ page }) => {
+    await readScreenshot(page, "screenshot-no-schedule.png");
+    await expect(reviewPanel(page)).toContainText("Hittade inga pass i bilden");
+    await expect(page.getByRole("button", { name: "Använd passen" })).toHaveCount(0);
+    await page.getByRole("button", { name: "Avbryt" }).click();
+    await expect(reviewPanel(page)).toHaveCount(0);
+    await expect(page.getByText("Inget schema uppladdat än.")).toBeVisible();
+  });
+
+  test("P7-05  nothing leaves the browser while a picture is read", async ({ page }) => {
+    const hosts = new Set();
+    page.on("request", (r) => {
+      const u = new URL(r.url());
+      if (u.protocol !== "blob:" && u.hostname !== "localhost") hosts.add(u.hostname);
+    });
+    await readScreenshot(page, "screenshot-light.png");
+    expect([...hosts]).toEqual([]);
+  });
+
+  test("P7-06  a row corrected in the review is what gets loaded", async ({ page }) => {
+    await readScreenshot(page, "screenshot-light.png");
+    // Monday 09:00–18:00 instead of 17:00: one more base hour, still no OB.
+    await reviewRows(page).first().locator('label:has(span:text-is("Till")) input').fill("18:00");
+    await page.getByRole("button", { name: "Använd passen" }).click();
+    await expect(page.getByText("4 pass inlästa")).toBeVisible();
+    expect(await kr(page, "Bruttolön")).toBeCloseTo(5868.83 + 177.44, 2);
+  });
+
+  test("P7-07  a time that cannot be read is refused, not loaded as nothing", async ({ page }) => {
+    await readScreenshot(page, "screenshot-light.png");
+    await reviewRows(page).first().locator('label:has(span:text-is("Till")) input').fill("abc");
+    await page.getByRole("button", { name: "Använd passen" }).click();
+    await expect(reviewPanel(page)).toContainText("Kontrollera de markerade raderna");
+    await expect(page.getByText("Inget schema uppladdat än.")).toBeVisible();
   });
 });
 

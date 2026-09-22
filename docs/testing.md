@@ -6,7 +6,8 @@
 | --- | --- |
 | **OB splitting, breaks, midnight, holidays** | Two real payslips matched to 1,30 kr on gross, every tier exact. See [lonebesked.md](lonebesked.md). |
 | **Tax** | Two real payslips matched **exactly**: 4 630 kr and 5 149 kr. |
-| **Parsers, month filter, leave grouping, layout** | 58 browser cases, all passing. Below. |
+| **Parsers, month filter, leave grouping, layout** | 65 browser cases, all passing. Below. |
+| **Screenshot reading** | ⚠️ **Rendered fixtures only.** Four synthetic phone screens in `e2e/fixtures/screenshot-*.png` — light, dark, weekday-above-date, and one with no schedule — read exactly, and the money comes out identical to the CSV of the same shifts. No screenshot from a real scheduling app on a real phone has been through it yet. |
 | **Manual entry on a phone** | Confirmed on a real iPhone. |
 | **Sjuklön** | ⚠️ **Nothing.** Built from §15.4 and checked by hand only. No payslip with sick days has ever been run through it. |
 | **Semesterlön estimate, semesterersättning** | ⚠️ **Nothing outside the app.** P6-10 to P6-12 check the §14.6 and §14.8 arithmetic, not a payslip. The one real anchor is 1 622,25 kr/dag on the July payslip; summing the twelve payslips for work April 2025 – March 2026 would test the estimate against it. |
@@ -29,12 +30,21 @@ Still needing a human:
 - **P6-02** — a sick month against a payslip that has sick days on it.
 - **P6-13** — the semesterlön estimate against a real kr/dag figure: sum the
   bruttolön for work in one intjänandeår and compare 13 % ÷ 25 with the payslip.
+- **P7-08** — a real screenshot: open the schedule in the scheduling app on a
+  phone, screenshot it, read it in, and hold the review table against the
+  picture. Then the same on the phone's dark theme. Note what it got wrong.
 
 ## The browser suite
 
 `e2e/` holds a Playwright suite covering the parsers, both CSV dialects, xlsx,
-the column mapper, hand entry and paste, every OB tier end to end, leave, the
-month filter, persistence, the 375 px layout, contrast and keyboard access.
+the column mapper, hand entry and paste, screenshot reading and its review
+step, every OB tier end to end, leave, the month filter, persistence, the
+375 px layout, contrast and keyboard access.
+
+The screenshot cases run real OCR in the browser, so they take a few seconds
+each and need `public/tesseract/` in place — it is copied there by
+`npm install`. P7-05 asserts that reading a picture contacts no host but
+localhost, which is what keeps the privacy line in the README true.
 
 To run it:
 

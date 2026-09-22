@@ -7,12 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "e2e": "playwright test --config e2e/playwright.config.js"
+    "e2e": "playwright test --config e2e/playwright.config.js",
+    "postinstall": "node scripts/copy-tesseract.mjs"
   },
   "dependencies": {
     "next": "16.3.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",

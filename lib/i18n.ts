@@ -16,9 +16,69 @@ const dict = {
   // Upload
   schedule: { sv: "Schema", en: "Schedule" },
   uploadHint: {
-    sv: "Ladda upp ett schema (.csv eller .xlsx) med kolumnerna Datum, Start och Slut. Rast är valfri.",
-    en: "Upload a schedule (.csv or .xlsx) with Date, Start and End columns. Break is optional.",
+    sv: "Ladda upp ett schema (.csv eller .xlsx) med kolumnerna Datum, Start och Slut, eller en skärmbild av schemat från din telefon.",
+    en: "Upload a schedule (.csv or .xlsx) with Date, Start and End columns, or a screenshot of the schedule from your phone.",
   },
+  screenshotButton: { sv: "Läs av en skärmbild", en: "Read a screenshot" },
+  ocrEngine: {
+    sv: "Hämtar textläsaren. Första gången tar det en stund — några MB laddas ner, sedan finns den kvar.",
+    en: "Fetching the text reader. The first time takes a moment — a few MB are downloaded, then it stays.",
+  },
+  ocrReading: { sv: "Läser bilden", en: "Reading the picture" },
+  ocrPrivacy: {
+    sv: "Bilden läses av i din webbläsare och skickas ingenstans.",
+    en: "The picture is read in your browser and sent nowhere.",
+  },
+  errImage: {
+    sv: "Kunde inte öppna bilden. Prova en skärmbild i PNG eller JPG.",
+    en: "Could not open the picture. Try a screenshot in PNG or JPG.",
+  },
+  errOcrEngine: {
+    sv: "Textläsaren kunde inte laddas. Kontrollera att du är online och försök igen.",
+    en: "The text reader could not be loaded. Check that you are online and try again.",
+  },
+
+  // Screenshot review
+  reviewTitle: { sv: "Kontrollera passen", en: "Check the shifts" },
+  reviewHint: {
+    sv: "Så här lästes skärmbilden. Textläsning blir ibland fel, så jämför med bilden och rätta det som inte stämmer innan du går vidare.",
+    en: "This is how the screenshot was read. Text recognition is sometimes wrong, so compare with the picture and correct anything that is off before going on.",
+  },
+  reviewUse: { sv: "Använd passen", en: "Use these shifts" },
+  reviewNone: {
+    sv: "Hittade inga pass i bilden. Prova en tydligare skärmbild, eller klistra in schemat som text.",
+    en: "No shifts found in the picture. Try a clearer screenshot, or paste the schedule as text.",
+  },
+  reviewUnreadOne: {
+    sv: "dag har ett datum men inga läsbara tider och är inte med:",
+    en: "day has a date but no readable times and is left out:",
+  },
+  reviewUnreadMany: {
+    sv: "dagar har ett datum men inga läsbara tider och är inte med:",
+    en: "days have a date but no readable times and are left out:",
+  },
+  reviewYearAssumed: {
+    sv: "Året syns inte i bilden, så",
+    en: "The year is not in the picture, so",
+  },
+  reviewYearAssumedTail: { sv: "antogs. Kontrollera datumen.", en: "was assumed. Check the dates." },
+  reviewRead: { sv: "Läst", en: "Read" },
+  flagWeekday: {
+    sv: "Veckodagen i bilden stämmer inte med det här datumet.",
+    en: "The weekday in the picture does not match this date.",
+  },
+  flagNoBreak: {
+    sv: "Över 5 timmar och ingen rast lästes. Står det en rast i bilden? Utan rast betalas hela passet.",
+    en: "Over 5 hours and no break was read. Is there a break in the picture? Without one the whole shift is paid.",
+  },
+  reviewInvalid: {
+    sv: "Kontrollera de markerade raderna: datum som ÅÅÅÅ-MM-DD, tider som 17:00, rast i minuter.",
+    en: "Check the marked rows: date as YYYY-MM-DD, times as 17:00, break in minutes.",
+  },
+  reviewShowText: { sv: "Visa den avlästa texten", en: "Show the text that was read" },
+  reviewHideText: { sv: "Dölj den avlästa texten", en: "Hide the text that was read" },
+  reviewShowImage: { sv: "Visa bilden", en: "Show the picture" },
+  reviewHideImage: { sv: "Dölj bilden", en: "Hide the picture" },
   chooseFile: { sv: "Välj fil", en: "Choose file" },
   replaceFile: { sv: "Byt fil", en: "Replace file" },
   clearSchedule: { sv: "Rensa schema", en: "Clear schedule" },
@@ -150,8 +210,8 @@ const dict = {
     en: "Choose the municipality you are registered in. Tax is then taken from Skatteverket's tax table, the same way your employer does it. It does not matter if you have no payslip yet — none is needed.",
   },
   step3: {
-    sv: "Lägg in ditt schema: ladda upp filen från ditt schemasystem (.xlsx eller .csv), klistra in schemat som text eller skriv in passen för hand.",
-    en: "Add your schedule: upload the file from your scheduling system (.xlsx or .csv), paste the schedule as text, or enter the shifts by hand.",
+    sv: "Lägg in ditt schema: läs av en skärmbild av schemat, ladda upp filen från ditt schemasystem (.xlsx eller .csv), klistra in schemat som text eller skriv in passen för hand.",
+    en: "Add your schedule: read a screenshot of the schedule, upload the file from your scheduling system (.xlsx or .csv), paste the schedule as text, or enter the shifts by hand.",
   },
   stepLeave: {
     sv: "Varit sjuk eller haft semester? Välj Sjuk eller Semester när du skriver in pass för hand. De dagarna betalas på ett annat sätt än vanliga pass.",

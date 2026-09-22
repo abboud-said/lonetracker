@@ -42,3 +42,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# OCR engine copied from node_modules on postinstall (scripts/copy-tesseract.mjs)
+/public/tesseract/

@@ -17,8 +17,8 @@ store staff, which is most of Swedish retail.
 
 ## What it does
 
-- Reads a schedule three ways — a `.csv`/`.xlsx` export, text pasted from a PDF
-  or email, or shifts typed in by hand
+- Reads a schedule four ways — a screenshot from your phone, a `.csv`/`.xlsx`
+  export, text pasted from a PDF or email, or shifts typed in by hand
 - Splits every shift across OB tiers by day type and time of day
 - Handles shifts running past midnight, applying the *next* day's rules to the
   hours after 00:00
@@ -31,9 +31,19 @@ store staff, which is most of Swedish retail.
 ## Getting a schedule in
 
 Every employer runs a different scheduling system, and a parser can only be
-written for a format someone has actually seen. So there are three routes in,
+written for a format someone has actually seen. So there are four routes in,
 and the last one always works:
 
+- **A screenshot.** Open the schedule on your phone, take a screenshot, and
+  hand it to the app. The text is read off the picture on the device (see
+  *Privacy*) and turned into shifts, which are shown in a table beside what
+  was read, for checking against the picture — OCR is wrong often enough that
+  nothing read this way is loaded unseen. Each row can be corrected or
+  removed, a day with a date but no readable times is listed rather than
+  dropped, and a year missing from the picture is assumed and said so. A
+  weekday name in the picture is checked against the date and a mismatch
+  flagged. Light and dark mode both work. What trips it up: times without
+  minutes (`kl 9–17`), and tables where a whole week sits in columns.
 - **A file.** `.csv` or `.xlsx`. Columns are found by their headings, in
   Swedish or English. If the headings are unfamiliar the file is not rejected —
   the columns are listed with sample values and you point out which is the
@@ -154,7 +164,9 @@ arrived late.
 
 Checked against two real Bestseller time exports and the payslips they
 produced. June and July both land within 1.30 kr on the month, with every OB
-tier exact. The sjuklön path has no payslip behind it yet — it is built from
+tier exact. The screenshot route has been checked only against screenshots
+rendered for the purpose, in three layouts, light and dark — not yet against a
+picture taken of a real scheduling app on a real phone. The sjuklön path has no payslip behind it yet — it is built from
 §15.4 and verified against hand calculation, not against money actually
 received.
 
@@ -162,6 +174,11 @@ received.
 
 There is no backend, no account, and no analytics. The schedule is parsed in the
 browser and the results never leave it.
+
+A screenshot is read on the device too, by Tesseract running in a web worker.
+The engine and the Swedish language data are served from this site, not from a
+CDN, so reading a picture fetches nothing from anyone else — the first use
+downloads a few megabytes of engine from here, and after that it is cached.
 
 ## Sources
 
@@ -183,16 +200,26 @@ inflates the entries with the browser's built-in `DecompressionStream`, so the
 app ships no spreadsheet dependency. Persisted state is exposed to React through
 `useSyncExternalStore`, which also picks up changes from other open tabs.
 
+Screenshots are read with [tesseract.js](https://github.com/naptha/tesseract.js),
+loaded on demand so it costs nothing until a picture is chosen. Its worker and
+WebAssembly core are copied out of `node_modules` into `public/tesseract/` on
+`npm install` (`scripts/copy-tesseract.mjs`; the folder is gitignored), and the
+Swedish `tessdata_fast` model is committed under `public/tessdata/`, so the
+whole thing is served from the same origin as the page. The picture is
+upscaled, greyscaled and, when it is a dark theme, inverted before it is read.
+
 ```
 lib/
-  rules.ts     tiers, windows, preset, day classification, validation
-  holidays.ts  svenska helgdagar, incl. Easter-derived dates
-  calc.ts      shift splitting and pay totals
-  parse.ts     csv + xlsx readers, schedule column detection
-  storage.ts   localStorage load/save
-  store.ts     useSyncExternalStore bindings
-  i18n.ts      sv/en strings
-  time.ts      time parsing and formatting
+  rules.ts           tiers, windows, preset, day classification, validation
+  holidays.ts        svenska helgdagar, incl. Easter-derived dates
+  calc.ts            shift splitting and pay totals
+  parse.ts           csv + xlsx readers, schedule column detection, pasted text
+  screenshot.ts      image preparation and on-device OCR
+  screenshotText.ts  OCR text into shifts: dates, times, breaks, weekday check
+  storage.ts         localStorage load/save
+  store.ts           useSyncExternalStore bindings
+  i18n.ts            sv/en strings
+  time.ts            time parsing and formatting
 ```
 
 ## Running it locally

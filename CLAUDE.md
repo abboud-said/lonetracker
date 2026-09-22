@@ -28,6 +28,17 @@ change that left the browser bundle broken. Open the page.
 **Turbopack does not run on Windows here** — Application Control blocks the
 native SWC binary. Use `npx next dev --webpack`.
 
+**A screenshot is never loaded unseen.** OCR output goes through the review
+table in `components/ScreenshotReview.tsx` first, always. Do not add a path
+that skips it because the read "looks clean" — the clean-looking reads are the
+ones nobody checks.
+
+**The OCR engine is not in git.** `public/tesseract/` is copied from
+`node_modules` by `npm install` (`scripts/copy-tesseract.mjs`). If the
+screenshot route says the text reader could not be loaded, that folder is
+missing — run `npm install`. The language model in `public/tessdata/` is
+committed.
+
 ## The bar for a change that touches money
 
 This app exists so someone can hold its number against their own payslip. A
@@ -49,9 +60,11 @@ from a real lönebesked beat any number of self-consistent tests.
 ```
 app/         routes; one page, statically prerendered
 components/  UI
-lib/         rules, holidays, calc, parse, storage, i18n, skattetabell
+lib/         rules, holidays, calc, parse, screenshot OCR, storage, i18n, skattetabell
 docs/        payslip reconciliation, tax, testing
-e2e/         Playwright acceptance suite (not wired into package.json)
+e2e/         Playwright acceptance suite (npm run e2e, dev server must be up)
+scripts/     copy-tesseract.mjs, run on postinstall
+public/      icons, tessdata (committed), tesseract engine (generated, ignored)
 ```
 
 Swedish payroll terms stay in Swedish throughout, in code and in copy —

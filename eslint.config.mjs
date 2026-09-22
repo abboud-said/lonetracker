@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // The OCR engine copied out of node_modules on postinstall, not source.
+    "public/tesseract/**",
   ]),
 ]);
 
