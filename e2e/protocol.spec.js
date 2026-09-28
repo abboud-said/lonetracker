@@ -171,7 +171,8 @@ test.describe("Phase 2 — pay settings", () => {
     console.log(`    gross ${gross} -> tax ${tax} -> net ${net}`);
     expect(gross).toBeGreaterThan(0);
     expect(tax).toBeGreaterThan(0);
-    expect(net).toBeCloseTo(gross - tax, 1);
+    // Paid out in whole kronor, as the Utbetalas line is.
+    expect(net).toBe(Math.round(gross - tax));
   });
 
   test("P2-04d  church membership moves the table", async ({ page }) => {
@@ -208,7 +209,8 @@ test.describe("Phase 2 — pay settings", () => {
 
     await expect(page.getByText("Nettolön", { exact: true })).toBeVisible();
     expect(await kr(page, "Bruttolön")).toBe(800);
-    expect(await kr(page, "Nettolön")).toBeCloseTo(800 * (1 - 0.176939), 1);
+    // 658,45 before the öre are rounded off, as on the payslip's Utbetalas line.
+    expect(await kr(page, "Nettolön")).toBe(Math.round(800 * (1 - 0.176939)));
   });
 
   test("P2-08  a saved percentage survives and stays visible", async ({ page }) => {

@@ -140,6 +140,22 @@ export type SickResult = {
   daysBeyondPeriod: number;
 };
 
+/**
+ * Payroll's arithmetic, which is not the app's natural one. The app keeps
+ * minutes; the payslip prices each row on the month's hours to two decimals
+ * (61,02 h, not 61,0167), at a rate rounded to the öre (124,21, not 124,208),
+ * and rounds the row to the öre. The rounding is per row, not per day: three
+ * months of Bestseller payroll add up to the payslip only when the minutes are
+ * summed first and rounded once. Doing the same is what turns "within 1,50 kr"
+ * into "to the öre" — and the difference is not cosmetic: on August 2026 the
+ * 1,48 kr sat exactly across a skattetabell bracket edge, so the tax was 47 kr
+ * out and the net 46 kr out despite every hour being right.
+ */
+const roundHours = (minutes: number) => Math.round((minutes / 60) * 100) / 100;
+const ore = (kr: number) => Math.round(kr * 100) / 100;
+/** A payslip row: hours to two decimals, times a rate to the öre, to the öre. */
+const row = (minutes: number, rate: number) => ore(roundHours(minutes) * ore(rate));
+
 const SICK_RATE = 0.8;
 const KARENS_SHARE = 0.2;
 const SICK_PERIOD_DAYS = 14;
@@ -231,6 +247,9 @@ export function computeSickPay(
         ? worked.paidMinutes - day.leaveMin
         : 0;
 
+    // Each sick day is its own payslip row, so it is rounded on its own:
+    // hours to two decimals, at 80 % of the timlön rounded to the öre.
+    let dayPaid = 0;
     for (const seg of segments) {
       let minutes = seg.minutes * scale;
       if (skip > 0) {
@@ -247,11 +266,15 @@ export function computeSickPay(
       if (minutes <= 0 || !reported) continue;
 
       perTier[seg.tierId] = (perTier[seg.tierId] ?? 0) + minutes;
-      paidMinutes += minutes;
+      dayPaid += minutes;
 
       const tier = ruleSet.tiers.find((t) => t.id === seg.tierId);
-      amount += (minutes / 60) * settings.baseRate * SICK_RATE;
       if (tier) obAmount += (minutes / 60) * settings.baseRate * (tier.percent / 100) * SICK_RATE;
+    }
+    if (dayPaid > 0) {
+      const dayMinutes = roundHours(dayPaid) * 60;
+      paidMinutes += dayMinutes;
+      amount += row(dayMinutes, settings.baseRate * SICK_RATE);
     }
   }
 
@@ -309,7 +332,7 @@ export function computeShift(shift: Shift, ruleSet: RuleSet, settings: Settings)
   for (const tier of ruleSet.tiers) {
     const minutes = perTier[tier.id] ?? 0;
     if (minutes > 0) {
-      tierAmounts[tier.id] = (minutes / 60) * settings.baseRate * (tier.percent / 100);
+      tierAmounts[tier.id] = (minutes / 60) * ore(settings.baseRate * (tier.percent / 100));
     }
   }
 
@@ -365,14 +388,32 @@ export function computeTotals(
 
   for (const r of results) {
     paidMinutes += r.paidMinutes;
-    baseAmount += r.baseAmount;
-    gross += r.gross;
     for (const [key, minutes] of Object.entries(r.perTier)) {
       perTier[key] = (perTier[key] ?? 0) + minutes;
     }
-    for (const [key, amount] of Object.entries(r.tierAmounts)) {
-      tierAmounts[key] = (tierAmounts[key] ?? 0) + amount;
+  }
+
+  // Priced the way the payslip is: one Timlön row on the month's hours, one
+  // row per OB tier, each rounded to the öre. Summing the days' amounts
+  // instead drifts by an öre or two, and an öre is enough to cross a tax
+  // bracket.
+  baseAmount = row(paidMinutes, settings.baseRate);
+  gross = baseAmount;
+  if (ruleSet) {
+    for (const tier of ruleSet.tiers) {
+      const minutes = perTier[tier.id] ?? 0;
+      if (minutes > 0) {
+        tierAmounts[tier.id] = row(minutes, settings.baseRate * (tier.percent / 100));
+        gross += tierAmounts[tier.id];
+      }
     }
+  } else {
+    for (const r of results) {
+      for (const [key, amount] of Object.entries(r.tierAmounts)) {
+        tierAmounts[key] = (tierAmounts[key] ?? 0) + amount;
+      }
+    }
+    gross += Object.values(tierAmounts).reduce((a, b) => a + b, 0);
   }
 
   // Semesterersättning is 13 % of the pay for work (§14.8), so it is taken
@@ -399,6 +440,10 @@ export function computeTotals(
 
   const tax = taxOf ? (taxOf(gross) ?? 0) : gross * (settings.taxRate / 100);
 
+  // What is paid out is whole kronor: the öre are rounded off on the payslip's
+  // Utbetalas line (28 246,17 becomes 28 246,00), seen on every payslip checked.
+  const net = Math.round(gross - tax);
+
   return {
     shifts: results.length,
     leave: visibleLeave,
@@ -412,6 +457,6 @@ export function computeTotals(
     tierAmounts,
     gross,
     tax,
-    net: gross - tax,
+    net,
   };
 }

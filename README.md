@@ -159,11 +159,18 @@ arrived late.
 ## Accuracy
 
 Checked against three real Bestseller time exports and the payslips they
-produced. June, July and August 2026 all land within 1.50 kr on the month,
-with every OB tier exact and worked hours to the minute. August is the sick
-month: two separate sick days, two karens periods, 4,16 h of sjuklön — hours
-exact, kronor within rounding — and two days of approved mertid read from the
-Godkänd column.
+produced. June and August 2026 match the payslip to the öre on gross, and to
+the krona on tax and on what was paid out; July is 1,77 kr under on gross,
+which is the payslip splitting one month over two stores and rounding each
+half on its own — something the export does not show. Every OB tier is exact.
+August is the sick month: two separate sick days, two karens periods, 4,16 h of
+sjuklön to the öre, and two days of approved mertid read from the Godkänd
+column.
+
+The app rounds the way payroll does — the month's hours per row to two
+decimals, the rate to the öre, each row to the öre, the payout to whole
+kronor — because a krona's difference can cross a skattetabell bracket edge
+and move the tax by fifty.
 
 ## Privacy
 

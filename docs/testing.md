@@ -4,8 +4,8 @@
 
 | | Evidence |
 | --- | --- |
-| **OB splitting, breaks, midnight, holidays, Godkänd hours** | Three real payslips matched to 1,50 kr on gross, every tier exact, hours to the minute. See [lonebesked.md](lonebesked.md). |
-| **Tax** | Two real payslips matched **exactly**: 4 630 kr and 5 149 kr. |
+| **OB splitting, breaks, midnight, holidays, Godkänd hours, payroll rounding** | Three real payslips: June and August to the öre on gross, July 1,77 kr under (a two-store split the export cannot show), every tier exact. See [lonebesked.md](lonebesked.md). |
+| **Tax** | Three real payslips matched **exactly**: 4 630 kr, 5 149 kr and 6 756 kr — the last only once the gross was rounded like payroll, being 1,48 kr from a bracket edge. |
 | **Parsers, month filter, leave grouping, layout** | 58 browser cases, all passing. Below. |
 | **Manual entry on a phone** | Confirmed on a real iPhone. |
 | **Sjuklön** | One real payslip (August 2026): two sick periods, karens 3,83 h each, 4,16 h paid — hours exact, kronor within rounding. Longer spells and relapses still by hand only. |

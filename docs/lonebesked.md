@@ -44,8 +44,8 @@ one. Adding OB hours to Timlön hours double-counts.
 
 ## Three verified months
 
-All matched to within 1,50 kr on gross, and exactly on tax where the table was
-checked:
+June and August match to the öre on gross, and exactly on tax and on the
+Utbetalas line; July is 1,77 kr under (see below):
 
 | Worked | Paid on | Bruttolön | Arbetad tid | OB 50 / 70 / 100 | Sjuklön | Prel. skatt |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -53,9 +53,35 @@ checked:
 | juli 2026 | lönebesked aug | 26 167,79 | 95,74 h | 5,67 / 3,17 / 46,68 | – | 4 630,00 |
 | aug 2026 | lönebesked sept | 35 002,17 | 126,90 h | 7,45 / 3,27 / 61,02 | 590,51 (4,16 h) | 6 756,00 |
 
-The krona or so comes from the employer rounding each payslip row to two
-decimals while the app works from minutes. It is not a defect and it does not
-accumulate.
+## Rounding like payroll
+
+Payroll does its arithmetic on the month, not the day: each payslip row is
+the month's hours at that tier to two decimals (61,02 h, not 61,0167), times
+a rate to the öre (124,21 for OB 70 %, not 124,208), rounded to the öre. The
+net is then paid out in whole kronor — 28 246,17 becomes *Utbetalas
+28 246,00*. Rounding per day instead comes out a hundredth short (August:
+126,89 h against 126,90); rounding once per row lands on the payslip.
+
+This is not cosmetic. Before the app rounded this way, August 2026 came to
+35 000,69 against a payslip of 35 002,17 — 1,48 kr, which happened to sit
+across the edge of a tax bracket. Tabell 31 withholds 6 709 kr on 35 000 and
+6 756 kr on 35 001, so the app was 47 kr out on tax and 46 kr out on the net
+with every hour and every tier correct.
+
+**July's 1,77 kr.** That month was worked in two stores, and the payslip
+carries a Timlön row per store, each rounded on its own: 91,07 h + 4,67 h =
+95,74 h, where the month as one row is 95,73 h. The export does not say which
+store a day belongs to, so the app cannot follow the split. It is the one
+residual the reconciliation cannot close, and it is bounded by an öre per
+row.
+
+**The 449 kr that was not a bug.** Checking August in the app gave
+27 796,64 kr against 28 246,00 paid. The whole gap was the weekly hours never
+having been typed in: without them karensperioden cannot be sized, so the
+app keeps sjuklön out of the gross and says so under the net figure — 590,51
+kr of sjuklön less the 142 kr of tax on it, plus the rounding above. Typing 19,15 closed
+it. The note now sits inside the box with the net figure, since it was
+missed below it.
 
 ## The Godkänd column
 

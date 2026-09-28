@@ -295,8 +295,11 @@ export function Summary({
               <span className="tabular text-2xl font-semibold">{money(totals.net, lang)}</span>
             </div>
             <p className="text-xs text-muted mt-0.5">{t("netPayout", lang)}</p>
+            {/* Inside the box, next to the number it qualifies: a month with
+                sick days and no weekly hours once read as 449 kr wrong against
+                the payslip, with the note sitting below the box unread. */}
+            {exclusions}
           </div>
-          {exclusions}
 
           <p className="text-xs text-muted mt-3 max-w-prose">{t("taxEstimate", lang)}</p>
         </>
@@ -308,8 +311,8 @@ export function Summary({
               <span className="tabular text-2xl font-semibold">{money(totals.gross, lang)}</span>
             </div>
             <p className="text-xs text-muted mt-0.5">{t("grossPayout", lang)}</p>
+            {exclusions}
           </div>
-          {exclusions}
 
           <p className="text-xs text-muted mt-3 max-w-prose">{t("netNeedsTax", lang)}</p>
         </>
