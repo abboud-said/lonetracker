@@ -175,6 +175,16 @@ function WorkRow({
   );
 }
 
+/**
+ * Where a part-day sick shift turns from work into sickness, for the label.
+ * The leave is the end of the shift, and the rast is assumed to fall in the
+ * worked part when there was room for it — a rough clock time, not payroll.
+ */
+function sickFrom(day: Shift): number {
+  const worked = day.endMin - day.startMin - day.breakMin - (day.leaveMin ?? 0);
+  return day.startMin + Math.max(0, worked) + (worked > day.breakMin ? day.breakMin : 0);
+}
+
 function LeaveRow({
   kind,
   day,
@@ -204,7 +214,11 @@ function LeaveRow({
       >
         <span className="text-sm font-medium w-28 shrink-0">{dateLabel(day.date, lang)}</span>
         <span className="text-sm text-muted tabular">
-          {whole ? t("wholeDay", lang) : `${hhmm(day.startMin)}–${hhmm(day.endMin)}`}
+          {whole
+            ? t("wholeDay", lang)
+            : day.leaveMin != null
+              ? `${t("partDaySick", lang)} ${hhmm(sickFrom(day))}`
+              : `${hhmm(day.startMin)}–${hhmm(day.endMin)}`}
         </span>
         <span className="ml-auto text-[0.7rem] font-medium text-accent border border-accent/40 rounded px-1.5 py-0.5">
           {t(LEAVE_LABEL[kind], lang)}

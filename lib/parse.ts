@@ -190,6 +190,17 @@ const LEAVE_KINDS = [
 ];
 const GENERIC_LEAVE_HEADERS = ["frånvaro", "franvaro", "heldagsfrånvaro", "absence"];
 
+// The hours the employer signed off for the day, which is what payroll is run
+// from. Where the export carries this column it settles everything the clock
+// times cannot: mertid approved after the fact, a rast not taken on a short
+// day, minutes docked for arriving late. Checked against three months of
+// Bestseller payroll: the column sums to "Arbetad tid" on the lönebesked to
+// the minute each time.
+const APPROVED_HEADERS = ["godkänd", "godkand", "godkända timmar", "approved", "approved hours"];
+
+/** A day partly worked and partly leave needs at least this much leave to count as such. */
+const MIN_PARTIAL_LEAVE = 15;
+
 const norm = (c: unknown) => String(c ?? "").trim().toLowerCase();
 
 /**
@@ -204,9 +215,11 @@ const norm = (c: unknown) => String(c ?? "").trim().toLowerCase();
  * produced: this lands within about a krona on the month, where reading the
  * plan alone was 700 kr out.
  *
- * One case it cannot see: hours worked beyond the schedule and approved
- * afterwards as mertid. Those are paid but look identical to clocking out
- * late, so they are left out rather than guessed at.
+ * Hours worked beyond the schedule and approved afterwards as mertid look
+ * identical to clocking out late, so they are only counted where the export
+ * says so itself — a "Godkänd" column with the hours the employer signed off.
+ * With that column the day pays exactly what payroll pays; without it the
+ * overlap above is the best that can be read.
  */
 /**
  * Days the export marked as leave rather than work, keeping the hours that
@@ -341,6 +354,8 @@ export function rowsToShifts(rows: Row[]): ParsedSchedule {
 
   if (blocks.length === 0) throw new ScheduleParseError("noTimes");
 
+  const approvedIdx = headerRow.findIndex((c) => APPROVED_HEADERS.includes(norm(c)));
+
   const shifts: Shift[] = [];
   const leave: LeaveDays = NO_LEAVE();
   for (let i = headerIdx + 1; i < rows.length; i++) {
@@ -355,19 +370,33 @@ export function rowsToShifts(rows: Row[]): ParsedSchedule {
     // overlap of all of them: pay starts at the later of scheduled and clocked
     // start, and stops at the earlier of the two ends. Clocking in a few
     // minutes early or lingering after close is not paid time.
+    //
+    // The clocked span is kept too, for the one case where the overlap is
+    // wrong: hours worked outside the schedule and approved afterwards.
     let startMin: number | null = null;
     let rawEnd: number | null = null;
+    let clockedStart: number | null = null;
+    let clockedEnd: number | null = null;
     let breakMin = 0;
+    // The first block is the plan. A sick day is paid on what was planned,
+    // not on the hour that was worked before going home.
+    let planned: { startMin: number; endMin: number; breakMin: number } | null = null;
     for (const block of blocks) {
       const s = toMinutes(row[block.start]);
       const e = toMinutes(row[block.end!]);
       if (s == null || e == null || s === e) continue;
+      const b = block.breakCol != null ? (toMinutes(row[block.breakCol]) ?? 0) : 0;
+      if (planned == null) {
+        planned = { startMin: s, endMin: e <= s ? e + 1440 : e, breakMin: b };
+      } else {
+        clockedStart = clockedStart == null ? s : Math.min(clockedStart, s);
+        clockedEnd = clockedEnd == null ? e : Math.max(clockedEnd, e);
+      }
       startMin = startMin == null ? s : Math.max(startMin, s);
       rawEnd = rawEnd == null ? e : Math.min(rawEnd, e);
-      const b = block.breakCol != null ? (toMinutes(row[block.breakCol]) ?? 0) : 0;
       breakMin = Math.max(breakMin, b);
     }
-    if (startMin == null || rawEnd == null || startMin >= rawEnd) continue;
+    if (startMin == null || rawEnd == null || startMin >= rawEnd || planned == null) continue;
 
     const scheduled = rawEnd - startMin - breakMin;
     const byKind = leaveCols.map((c) => ({
@@ -377,7 +406,25 @@ export function rowsToShifts(rows: Row[]): ParsedSchedule {
     const generic = genericIdxs.reduce((max, idx) => Math.max(max, toMinutes(row[idx]) ?? 0), 0);
     const named = byKind.reduce((sum, c) => sum + c.minutes, 0);
 
-    if (scheduled > 0 && Math.max(named, generic) >= scheduled - 2) {
+    // Worked the start of the day, then went home sick. The day is both: the
+    // hours worked are paid as work, and the rest of the *planned* shift is
+    // paid as sjuklön. Only sickness is split this way — a part-day semester
+    // does not exist, and other leave is not paid.
+    const sickMinutes = byKind.find((c) => c.kind === "sick")?.minutes ?? 0;
+    const plannedPaid = planned.endMin - planned.startMin - planned.breakMin;
+    const partlySick = sickMinutes >= MIN_PARTIAL_LEAVE && sickMinutes < plannedPaid - 2;
+    if (partlySick) {
+      leave.sick.push({
+        id: newId(),
+        date: m[0],
+        startMin: planned.startMin,
+        endMin: planned.endMin,
+        breakMin: planned.breakMin,
+        leaveMin: sickMinutes,
+      });
+    }
+
+    if (!partlySick && scheduled > 0 && Math.max(named, generic) >= scheduled - 2) {
       // Whichever named kind accounts for most of the day wins; a day flagged
       // only by the umbrella column has no stated reason, so it counts as other.
       const best = byKind.reduce((a, b) => (b.minutes > a.minutes ? b : a));
@@ -392,9 +439,37 @@ export function rowsToShifts(rows: Row[]): ParsedSchedule {
       continue;
     }
 
-
     // An end time at or before the start means the shift ran past midnight.
-    const endMin = rawEnd <= startMin ? rawEnd + 1440 : rawEnd;
+    let endMin = rawEnd <= startMin ? rawEnd + 1440 : rawEnd;
+
+    // A rast longer than the shift was never taken — someone who worked one
+    // hour and went home did not stop for lunch first.
+    if (breakMin >= endMin - startMin) breakMin = 0;
+
+    // Where the employer's approved hours are on the row, they decide what is
+    // paid. The clock times are then only used to place the hours on the OB
+    // windows: approved time beyond the overlap is pushed out towards the
+    // clocked start and end, since that is where it was worked, and any
+    // shortfall becomes unpaid time in the middle, like a rast.
+    const approved = approvedIdx > -1 ? toMinutes(row[approvedIdx]) : null;
+    if (approved != null && approved > 0) {
+      let extra = approved - (endMin - startMin - breakMin);
+      if (extra > 0) {
+        const early = Math.max(0, Math.min(extra, startMin - (clockedStart ?? startMin)));
+        startMin -= early;
+        extra -= early;
+        const late = Math.max(0, Math.min(extra, (clockedEnd ?? endMin) - endMin));
+        endMin += late;
+        extra -= late;
+        // Still more than the clock shows: the rast was cut short or skipped.
+        const skipped = Math.min(extra, breakMin);
+        breakMin -= skipped;
+        extra -= skipped;
+        // Approved but clocked nowhere: assume it was worked after the end.
+        if (extra > 0) endMin += extra;
+      }
+      breakMin = Math.max(0, endMin - startMin - approved);
+    }
 
     shifts.push({ id: newId(), date: m[0], startMin, endMin, breakMin });
   }

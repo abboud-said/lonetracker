@@ -4,11 +4,11 @@
 
 | | Evidence |
 | --- | --- |
-| **OB splitting, breaks, midnight, holidays** | Two real payslips matched to 1,30 kr on gross, every tier exact. See [lonebesked.md](lonebesked.md). |
+| **OB splitting, breaks, midnight, holidays, Godkänd hours** | Three real payslips matched to 1,50 kr on gross, every tier exact, hours to the minute. See [lonebesked.md](lonebesked.md). |
 | **Tax** | Two real payslips matched **exactly**: 4 630 kr and 5 149 kr. |
 | **Parsers, month filter, leave grouping, layout** | 58 browser cases, all passing. Below. |
 | **Manual entry on a phone** | Confirmed on a real iPhone. |
-| **Sjuklön** | ⚠️ **Nothing.** Built from §15.4 and checked by hand only. No payslip with sick days has ever been run through it. |
+| **Sjuklön** | One real payslip (August 2026): two sick periods, karens 3,83 h each, 4,16 h paid — hours exact, kronor within rounding. Longer spells and relapses still by hand only. |
 | **Semesterlön estimate, semesterersättning** | ⚠️ **Nothing outside the app.** P6-10 to P6-12 check the §14.6 and §14.8 arithmetic, not a payslip. The one real anchor is 1 622,25 kr/dag on the July payslip; summing the twelve payslips for work April 2025 – March 2026 would test the estimate against it. |
 | **Anyone but the author using it** | ⚠️ **Nothing.** Never handed to a stranger. |
 
@@ -26,7 +26,7 @@ Still needing a human:
   calculation changes.
 - **P1-02** — hand the phone to someone who has never seen it, say only "find
   out what you earned last month", then stay quiet.
-- **P6-02** — a sick month against a payslip that has sick days on it.
+- **P6-02** — done for August 2026 (two short spells). Redo with a spell longer than a week, or a relapse within five days.
 - **P6-13** — the semesterlön estimate against a real kr/dag figure: sum the
   bruttolön for work in one intjänandeår and compare 13 % ÷ 25 with the payslip.
 

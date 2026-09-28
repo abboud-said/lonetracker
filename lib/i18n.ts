@@ -292,9 +292,15 @@ const dict = {
   karens: { sv: "Karensperiod (obetald)", en: "Karens period (unpaid)" },
   sickPay: { sv: "Sjuklön (80 %)", en: "Sick pay (80 %)" },
   sickHint: {
-    sv: "Sjuklön är 80 % av lönen du skulle fått, OB inräknat (§15.4). Karensperioden är 20 % av din genomsnittliga arbetsvecka och är obetald — fyll i dina avtalade timmar per vecka från anställningsbeviset.",
-    en: "Sick pay is 80 % of what you would have earned, OB included (§15.4). The karens period is 20 % of your average working week and is unpaid — enter your agreed weekly hours from your contract.",
+    sv: "Sjuklön är 80 % av timlönen för de timmar du skulle ha jobbat (§15.4). Karensperioden är 20 % av din genomsnittliga arbetsvecka och är obetald — fyll i dina avtalade timmar per vecka från anställningsbeviset.",
+    en: "Sick pay is 80 % of your hourly rate for the hours you would have worked (§15.4). The karens period is 20 % of your average working week and is unpaid — enter your agreed weekly hours from your contract.",
   },
+  sickObNote: {
+    sv: "Enligt §15.4 ska du efter karensen dessutom få 80 % av OB-tillägget på sjuktimmarna. Det lönebesked appen är avstämt mot betalade inte det, så det räknas inte in i bruttolönen. Saknas det på ditt också, fråga arbetsgivaren eller Handels.",
+    en: "Under §15.4 you should also get 80 % of the OB supplement on the sick hours after the karens period. The payslip this app is checked against did not pay it, so it is left out of the gross. If yours does not have it either, ask your employer or your union.",
+  },
+  sickObAmount: { sv: "OB-del enligt avtalet (ej inräknad)", en: "OB part per the agreement (not included)" },
+  partDaySick: { sv: "sjuk från", en: "sick from" },
   needWeeklyHours: {
     sv: "Fyll i timmar per vecka för att räkna ut sjuklönen.",
     en: "Enter your weekly hours to calculate sick pay.",
@@ -308,9 +314,9 @@ const dict = {
     sv: "Står det ingen veckotid i ditt anställningsbevis? Då går karensen inte att räkna säkert — fråga din arbetsgivare eller Handels.",
     en: "No weekly hours in your contract? Then the karens period cannot be worked out reliably — ask your employer or your union.",
   },
-  sickUnverified: {
-    sv: "Sjuklönen följer §15.4 men har ännu inte stämts av mot ett riktigt lönebesked med sjukdagar. Jämför gärna med ditt.",
-    en: "Sick pay follows §15.4 but has not yet been checked against a real payslip with sick days on it. Compare it with yours.",
+  sickVerified: {
+    sv: "Sjuklönen är avstämd mot ett riktigt lönebesked med två sjukdagar: timmarna exakt, kronorna inom avrundning. Jämför gärna med ditt.",
+    en: "Sick pay has been checked against a real payslip with two sick days: hours exact, kronor within rounding. Compare it with yours.",
   },
   grossExcludes: { sv: "Bruttolönen räknar inte med:", en: "Gross pay does not include:" },
   excludesSick: {

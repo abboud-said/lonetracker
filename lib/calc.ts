@@ -125,7 +125,17 @@ export type SickResult = {
   /** Hours paid at the sjuklön rate. */
   paidMinutes: number;
   perTier: TierMinutes;
+  /** Sjuklön on the base rate: 80 % of timlön for every paid sick hour. In the gross. */
   amount: number;
+  /**
+   * 80 % of the OB the paid sick hours would have carried (§15.4, "dessutom
+   * 80 procent av ifrågavarande tillägg"). Kept out of the gross and shown
+   * separately: the one real payslip with sick days on it (August 2026,
+   * Bestseller) paid sjuklön on the base rate alone, so putting this in the
+   * headline would overstate what actually lands. It is reported so the
+   * person can see what the agreement says and take it up if it is missing.
+   */
+  obAmount: number;
   /** Days past the fourteenth of a sick period — Försäkringskassan's, not the employer's. */
   daysBeyondPeriod: number;
 };
@@ -151,8 +161,17 @@ function daysBetween(a: string, b: string): number {
  * calendar days of the last continues it, so it draws no second karens. Each
  * period opens with a karensperiod whose *length in hours* is 20 % of the
  * agreed average working week, taken from the front; nothing is paid for it.
- * Everything after is paid at 80 %, including 80 % of the OB those hours would
- * have earned.
+ * Everything after is paid at 80 % of the base rate. The 80 % of OB that
+ * §15.4 adds on top is worked out too but reported apart — see SickResult.
+ *
+ * A day that was only partly sick (worked the start, went home) carries
+ * `leaveMin`: the sick part is the *end* of the planned shift, so that many
+ * minutes are taken from the back of the day and the rest is skipped here,
+ * having been paid as work.
+ *
+ * Checked against a real payslip: August 2026, two separate sick days, each
+ * with its own karens of 3,83 h (20 % of a 19,15 h week), 2,42 h + 1,74 h paid
+ * at 141,95 kr — matched to the öre on hours and within rounding on kronor.
  *
  * `include` narrows what is *reported* without narrowing what is *walked*. A
  * sick period that opens on 29 August and runs into September has one karens,
@@ -171,6 +190,7 @@ export function computeSickPay(
   let karensMinutes = 0;
   let paidMinutes = 0;
   let amount = 0;
+  let obAmount = 0;
   let daysBeyondPeriod = 0;
 
   const days = [...sickDays].sort((a, b) => a.date.localeCompare(b.date));
@@ -201,13 +221,23 @@ export function computeSickPay(
 
     // What the day would have paid had it been worked, break included.
     const worked = computeShift(day, ruleSet, settings);
-    const scale =
-      worked.paidMinutes > 0
-        ? worked.paidMinutes / shiftSegments(day, ruleSet).reduce((a, b) => a + b.minutes, 0)
+    const segments = shiftSegments(day, ruleSet);
+    const total = segments.reduce((a, b) => a + b.minutes, 0);
+    const scale = worked.paidMinutes > 0 ? worked.paidMinutes / total : 0;
+
+    // On a part-day, the minutes worked before going home come off the front.
+    let skip =
+      day.leaveMin != null && day.leaveMin < worked.paidMinutes
+        ? worked.paidMinutes - day.leaveMin
         : 0;
 
-    for (const seg of shiftSegments(day, ruleSet)) {
+    for (const seg of segments) {
       let minutes = seg.minutes * scale;
+      if (skip > 0) {
+        const workedPart = Math.min(skip, minutes);
+        skip -= workedPart;
+        minutes -= workedPart;
+      }
       if (karensLeft > 0) {
         const swallowed = Math.min(karensLeft, minutes);
         karensLeft -= swallowed;
@@ -220,12 +250,12 @@ export function computeSickPay(
       paidMinutes += minutes;
 
       const tier = ruleSet.tiers.find((t) => t.id === seg.tierId);
-      const hourly = settings.baseRate * (1 + (tier ? tier.percent / 100 : 0));
-      amount += (minutes / 60) * hourly * SICK_RATE;
+      amount += (minutes / 60) * settings.baseRate * SICK_RATE;
+      if (tier) obAmount += (minutes / 60) * settings.baseRate * (tier.percent / 100) * SICK_RATE;
     }
   }
 
-  return { karensMinutes, paidMinutes, perTier, amount, daysBeyondPeriod };
+  return { karensMinutes, paidMinutes, perTier, amount, obAmount, daysBeyondPeriod };
 }
 
 export function computeShift(shift: Shift, ruleSet: RuleSet, settings: Settings): ShiftResult {
@@ -363,7 +393,7 @@ export function computeTotals(
 
   const sick = ruleSet
     ? computeSickPay(leave.sick, ruleSet, settings, within)
-    : { karensMinutes: 0, paidMinutes: 0, perTier: {}, amount: 0, daysBeyondPeriod: 0 };
+    : { karensMinutes: 0, paidMinutes: 0, perTier: {}, amount: 0, obAmount: 0, daysBeyondPeriod: 0 };
   const sickIncluded = (settings.weeklyHours || 0) > 0;
   if (sickIncluded) gross += sick.amount;
 

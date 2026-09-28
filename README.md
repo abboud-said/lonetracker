@@ -129,9 +129,13 @@ arrived late.
 - **Sjukdom** — calculated per §15.4. Sick days are grouped into periods, where
   a fresh spell within five calendar days continues the previous one. Each
   period opens with a karensperiod whose length in hours is 20 % of the agreed
-  working week, taken off the front and unpaid; the rest pays 80 % of what the
-  hours would have earned, OB included. Days past the fourteenth are
-  Försäkringskassan's and are excluded, with a note. Without weekly hours the
+  working week, taken off the front and unpaid; the rest pays 80 % of the
+  hourly rate. §15.4 also gives 80 % of the OB those hours would have carried;
+  the one real payslip with sick days on it did not pay that, so the OB part
+  is shown beside the sjuklön and kept out of the gross. A day worked in part
+  and then left sick is both: the hours worked pay as work, the rest of the
+  planned shift pays sjuklön. Days past the fourteenth are Försäkringskassan's
+  and are excluded, with a note. Without weekly hours the
   karensperiod cannot be sized, so sjuklön is shown as a ceiling and kept out of
   the gross until they are entered. Not modelled: the cap of ten karensavdrag in
   twelve months, and the sjukanmälan and läkarintyg conditions (§15.2–15.3).
@@ -141,9 +145,11 @@ arrived late.
 ## Not covered
 
 - **Övertid and mertid.** §8.1 notes that where overtime and OB overlap you get
-  only the higher percentage, not both. Not modelled — and hours worked beyond
-  the schedule and approved afterwards look identical to clocking out late, so
-  they are left out rather than guessed at.
+  only the higher percentage, not both. Not modelled as such. Where the export
+  carries a *Godkänd* column — the hours the employer signed off — that column
+  is what is paid, so approved mertid is counted through it; without the
+  column, hours beyond the schedule look identical to clocking out late and are
+  left out rather than guessed at.
 - **Månadslön.** §8.1 derives the hourly rate as 1/166 of monthly salary. Out of
   scope by design — see *Who it's for*.
 - **Agreements other than Detaljhandelsavtalet.** Lager- och e-handel has its
@@ -152,11 +158,12 @@ arrived late.
 
 ## Accuracy
 
-Checked against two real Bestseller time exports and the payslips they
-produced. June and July both land within 1.30 kr on the month, with every OB
-tier exact. The sjuklön path has no payslip behind it yet — it is built from
-§15.4 and verified against hand calculation, not against money actually
-received.
+Checked against three real Bestseller time exports and the payslips they
+produced. June, July and August 2026 all land within 1.50 kr on the month,
+with every OB tier exact and worked hours to the minute. August is the sick
+month: two separate sick days, two karens periods, 4,16 h of sjuklön — hours
+exact, kronor within rounding — and two days of approved mertid read from the
+Godkänd column.
 
 ## Privacy
 

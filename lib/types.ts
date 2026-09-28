@@ -51,6 +51,12 @@ export type Shift = {
   endMin: number;
   /** Unpaid break, in minutes. */
   breakMin: number;
+  /**
+   * For a leave day only: how many of the shift's paid minutes were actually
+   * leave, when the person worked the start of the shift and went home. The
+   * leave is the *end* of the shift. Absent means the whole shift was leave.
+   */
+  leaveMin?: number;
 };
 
 /**

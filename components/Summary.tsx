@@ -224,6 +224,17 @@ export function Summary({
                   {money(totals.sick.amount, lang)}
                 </span>
               </div>
+              {totals.sick.obAmount > 0 ? (
+                <>
+                  <div className="flex items-baseline justify-between gap-4">
+                    <span className="text-sm text-muted">{t("sickObAmount", lang)}</span>
+                    <span className="tabular text-sm text-muted">
+                      {money(totals.sick.obAmount, lang)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted">{t("sickObNote", lang)}</p>
+                </>
+              ) : null}
             </div>
           ) : (
             <div className="mt-2 pt-2 border-t border-border flex flex-col gap-1">
@@ -239,7 +250,7 @@ export function Summary({
             </div>
           )}
 
-          <p className="text-xs text-muted mt-2">{t("sickUnverified", lang)}</p>
+          <p className="text-xs text-muted mt-2">{t("sickVerified", lang)}</p>
 
           {totals.sick.daysBeyondPeriod > 0 ? (
             <p className="text-xs text-danger mt-2">
