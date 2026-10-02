@@ -6,7 +6,7 @@
 | --- | --- |
 | **OB splitting, breaks, midnight, holidays, Godkänd hours, payroll rounding** | Three real payslips: June and August to the öre on gross, July 1,77 kr under (a two-store split the export cannot show), every tier exact. See [lonebesked.md](lonebesked.md). |
 | **Tax** | Three real payslips matched **exactly**: 4 630 kr, 5 149 kr and 6 756 kr — the last only once the gross was rounded like payroll, being 1,48 kr from a bracket edge. |
-| **Parsers, month filter, leave grouping, layout** | 58 browser cases, all passing. Below. |
+| **Parsers, month filter, leave grouping, layout** | 60 browser cases, all passing. Below. |
 | **Manual entry on a phone** | Confirmed on a real iPhone. |
 | **Sjuklön** | One real payslip (August 2026): two sick periods, karens 3,83 h each, 4,16 h paid — hours exact, kronor within rounding. Longer spells and relapses still by hand only. |
 | **Semesterlön estimate, semesterersättning** | ⚠️ **Nothing outside the app.** P6-10 to P6-12 check the §14.6 and §14.8 arithmetic, not a payslip. The one real anchor is 1 622,25 kr/dag on the July payslip; summing the twelve payslips for work April 2025 – March 2026 would test the estimate against it. |
@@ -55,6 +55,11 @@ behaviour:
 - **P3-06** asserts the displayed months sum to the displayed total with *no
   tolerance*. That only holds because money is shown to the öre; rounding to
   whole kronor made two months display a krona apart from their own sum.
+- **P6-14** asserts a month with leave still missing its input is tagged
+  *ofullständig*, says what is missing before the figure, and never captions the
+  net "Detta betalas ut till dig". June 2026 with four semester days and no
+  kr/dag showed a net 4 940 kr under the payslip with that caption, and was read
+  as a miscalculation by the author.
 - **P2-06** asserts nothing on screen calls itself take-home while the tax rate
   is unknown. A guessed rate once drove the largest figure on the page and sent
   someone away believing the app was 3 000 kr wrong when its gross was right.

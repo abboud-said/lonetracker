@@ -105,9 +105,21 @@ const dict = {
     sv: "Detta betalas ut till dig",
     en: "This is what reaches your account",
   },
+  incompleteTag: { sv: "ofullständig", en: "incomplete" },
+  incompleteHint: {
+    sv: "Den riktiga siffran är högre. Fyll i det som saknas, så stämmer den.",
+    en: "The real figure is higher. Fill in what is missing and it will be right.",
+  },
+  // Shown under the net when the tax came out of the kommun's skattetabell. It
+  // used to carry the flat-rate caveat below, which told someone whose tax was
+  // already exact that it was a guess and sent them to their payslip for a rate.
+  taxFromTable: {
+    sv: "Skatten är tagen ur Skatteverkets skattetabell för din kommun, på samma sätt som arbetsgivaren räknar. Drar din arbetsgivare efter en annan tabell, eller har du jämkning, blir skatten en annan.",
+    en: "Tax is taken from Skatteverket's skattetabell for your municipality, the same way your employer works it out. If your employer withholds by a different table, or you have jämkning, the tax will differ.",
+  },
   taxEstimate: {
-    sv: "Skatten är en uppskattning. Riktig skatt räknas efter skattetabell, inte en fast procent. Ta din verkliga skatteprocent från lönebeskedet (skatteavdrag delat med bruttolön) för en exakt siffra.",
-    en: "Tax is an estimate. Real tax follows a skattetabell, not a flat percentage. Take your actual rate from a payslip (tax deducted divided by gross) for an exact figure.",
+    sv: "Skatten är räknad med en fast procent. Riktig skatt följer skattetabell, där procenten stiger med lönen, så en månad med annan lön kan skilja. Välj kommun under Skatt för att räkna efter tabell.",
+    en: "Tax is worked out with a flat percentage. Real tax follows a skattetabell, where the percentage rises with pay, so a month with different pay can differ. Choose your municipality under Tax to use the table.",
   },
   shifts: { sv: "Pass", en: "Shifts" },
   breakLabel: { sv: "Rast", en: "Break" },
@@ -158,8 +170,8 @@ const dict = {
     en: "Been off sick or on vacation? Choose Sick or Vacation when entering shifts by hand. Those days are paid differently from ordinary shifts.",
   },
   stepNote: {
-    sv: "Bruttolönen är den siffra du kan stämma av mot lönebeskedet. Nettolönen är en uppskattning, eftersom riktig skatt räknas efter skattetabell.",
-    en: "Gross pay is the figure to check against your payslip. Net pay is an estimate, since real tax follows a skattetabell.",
+    sv: "Bruttolönen är den siffra du stämmer av mot lönebeskedet. Skatten tas ur skattetabellen för din kommun, så när bruttolönen stämmer ska nettolönen också göra det.",
+    en: "Gross pay is the figure to check against your payslip. Tax comes from the skattetabell for your municipality, so when the gross matches, the net should too.",
   },
   taxHelp: {
     sv: "Från lönebeskedet: Preliminär skatt ÷ Bruttolön × 100",

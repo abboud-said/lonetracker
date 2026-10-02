@@ -201,6 +201,24 @@ test.describe("Phase 2 — pay settings", () => {
     expect(await kr(page, "Bruttolön")).toBe(800);
   });
 
+  test("P2-09  the note under the net says how the tax was arrived at", async ({ page }) => {
+    await setRate(page, 100);
+    await openManual(page);
+    await addShift(page, { date: "2026-08-03", from: "09:00", to: "17:00", brk: "" });
+
+    // From the kommun's skattetabell the tax is what the employer withholds;
+    // calling that an estimate sent someone to their payslip for a rate they
+    // did not need.
+    await page.locator('label:has(span:text-is("Kommun")) select').selectOption("Stockholm");
+    await expect(summary(page)).toContainText("Skatten är tagen ur Skatteverkets skattetabell");
+    await expect(summary(page)).not.toContainText("fast procent");
+
+    // A flat rate is the estimate, and says so.
+    await setTaxPercent(page, 30);
+    await expect(summary(page)).toContainText("Skatten är räknad med en fast procent");
+    await expect(summary(page)).not.toContainText("Skatten är tagen ur");
+  });
+
   test("P2-07  net appears once the payslip lines are in", async ({ page }) => {
     await setRate(page, 100);
     await openManual(page);
@@ -530,6 +548,33 @@ test.describe("Phase 6 — leave", () => {
     await expect(summary(page)).toContainText("Semesterlön · uppskattning");
     expect(await kr(page, "Bruttolön")).toBe(1622.25);
     await expect(summary(page)).not.toContainText("Bruttolönen räknar inte med:");
+  });
+
+  test("P6-14  a month missing semesterlön never calls its net the payout", async ({ page }) => {
+    await setRate(page, 100, 30);
+    await openManual(page);
+    await addShift(page, { date: "2026-08-03", from: "09:00", to: "17:00", brk: "" });
+    await page.getByRole("button", { name: "Semester", exact: true }).click();
+    await page.locator('input[type="date"]').fill("2026-08-05");
+    await page.getByRole("button", { name: "Lägg till semesterdag" }).click();
+
+    // June 2026 read as 4 940 kr wrong with the note in small print after a
+    // figure captioned "Detta betalas ut till dig".
+    await expect(summary(page)).toContainText("Nettolön · ofullständig");
+    await expect(summary(page)).toContainText("Bruttolön · ofullständig");
+    await expect(summary(page)).not.toContainText("Detta betalas ut till dig");
+    const text = await summary(page).innerText();
+    expect(text.indexOf("Bruttolönen räknar inte med:"), "what is missing must come before the figure")
+      .toBeLessThan(text.indexOf("Nettolön · ofullständig"));
+    expect(await kr(page, "Nettolön")).toBe(560);
+
+    const perDay = summary(page).locator('span:text-is("kr/dag")').locator("xpath=preceding-sibling::input");
+    await perDay.fill("1000");
+    await perDay.blur();
+    await expect(summary(page)).not.toContainText("ofullständig");
+    await expect(summary(page)).toContainText("Detta betalas ut till dig");
+    expect(await kr(page, "Bruttolön")).toBe(1800);
+    expect(await kr(page, "Nettolön")).toBe(1260);
   });
 
   test("P6-11  the guarantee wins when 13 % comes out lower", async ({ page }) => {

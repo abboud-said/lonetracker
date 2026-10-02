@@ -84,17 +84,29 @@ export function Summary({
   const excluded: string[] = [];
   if (sick.length > 0 && !totals.sickIncluded) excluded.push(t("excludesSick", lang));
   if (semester.length > 0 && totals.semesterPay <= 0) excluded.push(t("excludesSemester", lang));
-  const exclusions =
-    excluded.length > 0 ? (
-      <div className="mt-2 text-xs text-danger max-w-prose">
-        <span>{t("grossExcludes", lang)}</span>
-        <ul className="list-disc pl-5">
-          {excluded.map((line) => (
-            <li key={line}>{line}</li>
-          ))}
-        </ul>
-      </div>
-    ) : null;
+  const incomplete = excluded.length > 0;
+  const exclusions = incomplete ? (
+    <div className="mb-2.5 text-sm text-danger max-w-prose">
+      <span className="font-medium">{t("grossExcludes", lang)}</span>
+      <ul className="list-disc pl-5">
+        {excluded.map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+      </ul>
+    </div>
+  ) : null;
+  // An incomplete month must not look like an answer. June 2026 with four
+  // semester days and no kr/dag showed "Nettolön 18 157 kr — Detta betalas ut
+  // till dig", 4 940 kr under the payslip, with the note in small print after
+  // it; the author read it as a miscalculation. So the headline loses its
+  // weight and its claim, is tagged, and what is missing is said first.
+  const incompleteTag = incomplete ? ` · ${t("incompleteTag", lang)}` : "";
+  const headlineBox = incomplete
+    ? "mt-4 rounded-lg border border-danger bg-surface px-4 py-3.5"
+    : "mt-4 rounded-lg bg-accent-soft px-4 py-3.5";
+  const headlineFigure = incomplete
+    ? "tabular text-lg font-medium text-muted"
+    : "tabular text-2xl font-semibold";
 
   const picker = (
     <MonthPicker months={months} month={month} lang={lang} onChange={onMonthChange} />
@@ -172,7 +184,9 @@ export function Summary({
               <span className="text-sm text-muted">{t("perDay", lang)}</span>
             </span>
           </div>
-          <p className="text-xs text-muted mt-1.5">{t("semesterHint", lang)}</p>
+          <p className={`text-xs mt-1.5 ${totals.semesterPay > 0 ? "text-muted" : "text-danger"}`}>
+            {t("semesterHint", lang)}
+          </p>
           <SemesterEstimate
             lang={lang}
             date={semester[semester.length - 1].date}
@@ -281,7 +295,7 @@ export function Summary({
       {hasTax ? (
         <>
           <div className="mt-4 flex flex-col">
-            <Stat label={t("gross", lang)} value={money(totals.gross, lang)} />
+            <Stat label={`${t("gross", lang)}${incompleteTag}`} value={money(totals.gross, lang)} />
             <Stat
               label={`${t("tax", lang)} · ${effectiveRate.toFixed(2)} %`}
               value={`− ${money(totals.tax, lang)}`}
@@ -289,29 +303,38 @@ export function Summary({
             />
           </div>
 
-          <div className="mt-4 rounded-lg bg-accent-soft px-4 py-3.5">
-            <div className="flex items-baseline justify-between gap-4">
-              <span className="text-sm font-semibold">{t("net", lang)}</span>
-              <span className="tabular text-2xl font-semibold">{money(totals.net, lang)}</span>
-            </div>
-            <p className="text-xs text-muted mt-0.5">{t("netPayout", lang)}</p>
-            {/* Inside the box, next to the number it qualifies: a month with
-                sick days and no weekly hours once read as 449 kr wrong against
-                the payslip, with the note sitting below the box unread. */}
+          <div className={headlineBox}>
+            {/* Inside the box and ahead of the number it qualifies: a month
+                with sick days and no weekly hours once read as 449 kr wrong
+                against the payslip, with the note sitting below the box
+                unread — and after the figure it was missed again. */}
             {exclusions}
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="text-sm font-semibold">{`${t("net", lang)}${incompleteTag}`}</span>
+              <span className={headlineFigure}>{money(totals.net, lang)}</span>
+            </div>
+            <p className="text-xs text-muted mt-0.5">
+              {t(incomplete ? "incompleteHint" : "netPayout", lang)}
+            </p>
           </div>
 
-          <p className="text-xs text-muted mt-3 max-w-prose">{t("taxEstimate", lang)}</p>
+          {/* The caveat follows how the tax was arrived at. A table figure is
+              what the employer withholds; only a flat rate is an estimate. */}
+          <p className="text-xs text-muted mt-3 max-w-prose">
+            {t(settings.taxMode === "kommun" ? "taxFromTable" : "taxEstimate", lang)}
+          </p>
         </>
       ) : (
         <>
-          <div className="mt-4 rounded-lg bg-accent-soft px-4 py-3.5">
-            <div className="flex items-baseline justify-between gap-4">
-              <span className="text-sm font-semibold">{t("gross", lang)}</span>
-              <span className="tabular text-2xl font-semibold">{money(totals.gross, lang)}</span>
-            </div>
-            <p className="text-xs text-muted mt-0.5">{t("grossPayout", lang)}</p>
+          <div className={headlineBox}>
             {exclusions}
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="text-sm font-semibold">{`${t("gross", lang)}${incompleteTag}`}</span>
+              <span className={headlineFigure}>{money(totals.gross, lang)}</span>
+            </div>
+            <p className="text-xs text-muted mt-0.5">
+              {t(incomplete ? "incompleteHint" : "grossPayout", lang)}
+            </p>
           </div>
 
           <p className="text-xs text-muted mt-3 max-w-prose">{t("netNeedsTax", lang)}</p>
